@@ -1,0 +1,58 @@
+{
+  "recommendations": [
+    // Core development tools
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-typescript-next",
+    "formulahendry.auto-rename-tag",
+    "streetsidesoftware.code-spell-checker",
+    "naumovs.color-highlight",
+    "dsznajder.es7-react-js-snippets",
+    "github.copilot",
+    "github.vscode-pull-request-github",
+    "eamodio.gitlens",
+    "wix.vscode-import-cost",
+    "ms-vsliveshare.vsliveshare",
+    "christian-kohler.path-intellisense",
+    "bradlc.vscode-tailwindcss",
+    "gruntfuggly.todo-tree",
+    "redhat.vscode-yaml",
+    "ms-vscode-remote.remote-containers",
+
+    // React Native specific
+    "msjsdiag.vscode-react-native",
+    "amandeepmittal.expo-snippets",
+    "jundat95.react-native-snippet",
+    "rnative.react-native-tools",
+
+    // Firebase specific
+    "toba.vsfire",
+    "jsayol.firebase-explorer",
+
+    // Mobile development
+    "Orta.vscode-jest",
+    "ms-azuretools.vscode-docker",
+    "cssho.vscode-svgviewer",
+    "quicktype.quicktype",
+
+    // Debugging and performance
+    "msjsdiag.debugger-for-chrome",
+    "ms-vscode.js-debug",
+    "ms-vscode.js-debug-companion",
+    "firefox-devtools.vscode-firefox-debug",
+
+    // Code quality and security
+    "sonarsource.sonarlint-vscode",
+    "firsttris.vscode-jest-runner",
+    "VisualStudioExptTeam.vscodeintellicode",
+    "DavidAnson.vscode-markdownlint",
+    "yzhang.markdown-all-in-one",
+
+    // UI/UX development
+    "deinsoftware.colorize-brackets",
+    "miguelsolorio.fluent-icons",
+    "pkief.material-icon-theme",
+    "bierner.color-info",
+    "kisstkondoros.vscode-gutter-preview"
+  ]
+}
