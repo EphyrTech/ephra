@@ -13,9 +13,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { format, isSameDay } from 'date-fns';
 import { useAuth } from '../../hooks/useAuth';
 import {
-  getUserJournalEntries,
-  JournalEntry
-} from '../../services/firebase/journalService';
+  JournalEntry,
+  journalService
+} from '../../services/api';
 import JournalEntryCard from '../../components/journal/JournalEntryCard';
 
 const DayJournalScreen = ({ route, navigation }: any) => {
@@ -39,31 +39,57 @@ const DayJournalScreen = ({ route, navigation }: any) => {
 
     setLoading(true);
     try {
+      console.log('DayJournal: Fetching entries for date:', selectedDate);
+      console.log('DayJournal: User ID:', user?.id);
       // Get all journal entries for the user
-      const allEntries = await getUserJournalEntries(user.uid);
+      const allEntries = await journalService.getJournalEntries();
+      console.log('DayJournal: Total entries fetched:', allEntries.length);
+      console.log('DayJournal: All entries:', allEntries);
 
       // Filter entries for the selected date
+      const selectedDateObj = new Date(selectedDate);
+      console.log('DayJournal: Selected date object:', selectedDateObj);
+      console.log('DayJournal: Selected date string:', selectedDateObj.toDateString());
+
       const entriesForDate = allEntries.filter(entry => {
-        if (!entry.date) return false;
+        console.log('DayJournal: Checking entry:', entry.id, 'Date field:', entry.date, 'Created at:', entry.created_at);
 
-        const entryDate = entry.date instanceof Date
-          ? entry.date
-          : new Date((entry.date as any).seconds * 1000);
+        if (!entry.date && !entry.created_at) {
+          console.log('DayJournal: Entry has no date field, skipping');
+          return false;
+        }
 
-        return isSameDay(entryDate, new Date(selectedDate));
+        let entryDate: Date;
+
+        if (entry.date instanceof Date) {
+          entryDate = entry.date;
+        } else if (typeof entry.date === 'string') {
+          entryDate = new Date(entry.date);
+        } else if (entry.created_at) {
+          entryDate = new Date(entry.created_at);
+        } else {
+          console.log('DayJournal: Could not parse date for entry:', entry.id);
+          return false;
+        }
+
+        console.log('DayJournal: Entry date object:', entryDate);
+        console.log('DayJournal: Entry date string:', entryDate.toDateString());
+
+        const isSame = isSameDay(entryDate, selectedDateObj);
+        console.log('DayJournal: Date comparison result:', isSame);
+
+        if (isSame) {
+          console.log('DayJournal: ✅ Found matching entry:', entry.id, entryDate);
+        }
+        return isSame;
       });
 
-      // Sort entries by createdAt timestamp (newest first)
-      // Create a new sorted array instead of modifying the original
+      console.log('DayJournal: Entries for selected date:', entriesForDate.length);
+
+      // Sort entries by created_at timestamp (newest first)
       const sortedEntries = [...entriesForDate].sort((a, b) => {
-        const timeA = a.createdAt instanceof Date
-          ? a.createdAt.getTime()
-          : (a.createdAt as any)?.seconds * 1000 || 0;
-
-        const timeB = b.createdAt instanceof Date
-          ? b.createdAt.getTime()
-          : (b.createdAt as any)?.seconds * 1000 || 0;
-
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
         return timeB - timeA; // Descending order (newest first)
       });
 
@@ -83,7 +109,10 @@ const DayJournalScreen = ({ route, navigation }: any) => {
   };
 
   const handleEntryPress = (entry: JournalEntry) => {
-    navigation.navigate('JournalEntry', { entry });
+    console.log('DayJournal: Opening entry for editing:', entry.id);
+    console.log('DayJournal: Entry data:', entry);
+    // Pass entryId to trigger API fetch for latest data
+    navigation.navigate('JournalEntry', { entryId: entry.id });
   };
 
   const handleAddEntry = () => {

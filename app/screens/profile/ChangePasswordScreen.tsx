@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
-import { updateUserPassword, sendPasswordReset } from '../../services/firebase/userService';
+import { authService } from '../../services/api';
 
 interface ChangePasswordScreenProps {
   navigation: any;
@@ -31,25 +31,25 @@ const ChangePasswordScreen = ({ navigation }: ChangePasswordScreenProps) => {
 
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
-    
+
     if (!currentPassword) {
       newErrors.currentPassword = 'Current password is required';
     }
-    
+
     if (!newPassword) {
       newErrors.newPassword = 'New password is required';
     } else if (newPassword.length < 8) {
       newErrors.newPassword = 'Password must be at least 8 characters long';
     }
-    
+
     if (newPassword !== confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-    
+
     if (newPassword === currentPassword && newPassword) {
       newErrors.newPassword = 'New password must be different from current password';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -58,20 +58,21 @@ const ChangePasswordScreen = ({ navigation }: ChangePasswordScreenProps) => {
     if (!validateForm()) {
       return;
     }
-    
+
     setLoading(true);
     try {
-      await updateUserPassword(currentPassword, newPassword);
+      // Note: FastAPI backend may not have password update endpoint yet
+      // This is a placeholder implementation
       Alert.alert(
-        'Success',
-        'Your password has been updated successfully.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        'Feature Not Available',
+        'Password update functionality is not yet implemented in the API. Please use the password reset option instead.',
+        [{ text: 'OK' }]
       );
     } catch (error: any) {
       console.error('Error updating password:', error);
-      
-      // Handle specific Firebase errors
-      if (error.code === 'auth/wrong-password') {
+
+      // Handle API errors
+      if (error.status === 401) {
         setErrors({
           ...errors,
           currentPassword: 'Incorrect password. Please try again.'
@@ -79,7 +80,7 @@ const ChangePasswordScreen = ({ navigation }: ChangePasswordScreenProps) => {
       } else {
         Alert.alert(
           'Error',
-          'Failed to update password. Please try again later.'
+          error.message || 'Failed to update password. Please try again later.'
         );
       }
     } finally {
@@ -92,20 +93,20 @@ const ChangePasswordScreen = ({ navigation }: ChangePasswordScreenProps) => {
       Alert.alert('Error', 'No email associated with this account.');
       return;
     }
-    
+
     setResetLoading(true);
     try {
-      await sendPasswordReset(user.email);
+      await authService.resetPassword(user.email);
       Alert.alert(
         'Password Reset Email Sent',
         `We've sent a password reset link to ${user.email}. Please check your email to reset your password.`,
         [{ text: 'OK' }]
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending password reset:', error);
       Alert.alert(
         'Error',
-        'Failed to send password reset email. Please try again later.'
+        error.message || 'Failed to send password reset email. Please try again later.'
       );
     } finally {
       setResetLoading(false);

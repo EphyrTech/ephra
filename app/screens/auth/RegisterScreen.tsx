@@ -1,67 +1,76 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  KeyboardAvoidingView, 
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert
-} from 'react-native';
-import { useAuth } from '../../hooks/useAuth';
-import { SafeAreaView } from 'react-native-safe-area-context';
+  Alert,
+} from "react-native";
+import { useAuth } from "../../hooks/useAuth";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const RegisterScreen = ({ navigation }: any) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const { signUp, error, clearError } = useAuth();
-  
+
   const handleRegister = async () => {
     // Validate inputs
-    if (!email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      Alert.alert("Error", "Please fill in all fields");
       return;
     }
-    
+
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert("Error", "Passwords do not match");
       return;
     }
-    
+
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert("Error", "Password must be at least 6 characters");
       return;
     }
-    
+
     setLoading(true);
     try {
-      await signUp(email, password);
+      // Sign up with our API service
+      // The signUp method now accepts firstName and lastName directly
+      await signUp(email, password, firstName, lastName);
+
+      console.log("User registered successfully");
+
       // Navigation will be handled by the AppNavigator based on auth state
     } catch (error) {
-      console.log('Registration error:', error);
+      console.log("Registration error:", error);
       // Error is already set in the auth context
     } finally {
       setLoading(false);
     }
   };
-  
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoidingView}
       >
         <ScrollView contentContainerStyle={styles.scrollView}>
           <View style={styles.headerContainer}>
             <Text style={styles.headerText}>Create Account</Text>
-            <Text style={styles.subHeaderText}>Join Ephra and start your health journey</Text>
+            <Text style={styles.subHeaderText}>
+              Join Ephra and start your health journey
+            </Text>
           </View>
-          
+
           {error && (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>{error}</Text>
@@ -70,8 +79,24 @@ const RegisterScreen = ({ navigation }: any) => {
               </TouchableOpacity>
             </View>
           )}
-          
+
           <View style={styles.formContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="First Name"
+              value={firstName}
+              onChangeText={setFirstName}
+              autoCapitalize="words"
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Last Name"
+              value={lastName}
+              onChangeText={setLastName}
+              autoCapitalize="words"
+            />
+
             <TextInput
               style={styles.input}
               placeholder="Email"
@@ -81,7 +106,7 @@ const RegisterScreen = ({ navigation }: any) => {
               autoCapitalize="none"
               autoCorrect={false}
             />
-            
+
             <TextInput
               style={styles.input}
               placeholder="Password"
@@ -89,7 +114,7 @@ const RegisterScreen = ({ navigation }: any) => {
               onChangeText={setPassword}
               secureTextEntry
             />
-            
+
             <TextInput
               style={styles.input}
               placeholder="Confirm Password"
@@ -97,21 +122,21 @@ const RegisterScreen = ({ navigation }: any) => {
               onChangeText={setConfirmPassword}
               secureTextEntry
             />
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={[styles.button, loading && styles.disabledButton]}
               onPress={handleRegister}
               disabled={loading}
             >
               <Text style={styles.buttonText}>
-                {loading ? 'Creating Account...' : 'Create Account'}
+                {loading ? "Creating Account..." : "Create Account"}
               </Text>
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.loginContainer}>
             <Text style={styles.loginText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <TouchableOpacity onPress={() => navigation.navigate("Login")}>
               <Text style={styles.loginLink}>Log In</Text>
             </TouchableOpacity>
           </View>
@@ -124,7 +149,7 @@ const RegisterScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -132,80 +157,80 @@ const styles = StyleSheet.create({
   scrollView: {
     flexGrow: 1,
     padding: 20,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   headerContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 40,
   },
   headerText: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 8,
   },
   subHeaderText: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
   },
   formContainer: {
-    width: '100%',
+    width: "100%",
     marginBottom: 20,
   },
   input: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     borderRadius: 8,
     padding: 15,
     marginBottom: 15,
     fontSize: 16,
   },
   button: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
     borderRadius: 8,
     padding: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 10,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   disabledButton: {
     opacity: 0.7,
   },
   loginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: 20,
   },
   loginText: {
-    color: '#666',
+    color: "#666",
     fontSize: 14,
   },
   loginLink: {
-    color: '#4CAF50',
+    color: "#4CAF50",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   errorContainer: {
-    backgroundColor: '#ffebee',
+    backgroundColor: "#ffebee",
     padding: 10,
     borderRadius: 8,
     marginBottom: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   errorText: {
-    color: '#d32f2f',
+    color: "#d32f2f",
     flex: 1,
   },
   dismissText: {
-    color: '#d32f2f',
-    fontWeight: '600',
+    color: "#d32f2f",
+    fontWeight: "600",
     marginLeft: 10,
   },
 });

@@ -13,139 +13,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Specialist,
-  SpecialistType
-} from '../../services/firebase/specialistService';
+  specialistService
+} from '../../services/api';
 
-// Mock data for specialists
-const MOCK_SPECIALISTS: Record<SpecialistType, Specialist[]> = {
-  mental: [
-    {
-      id: '1',
-      name: 'Dr. Sarah Johnson',
-      type: 'mental',
-      title: 'Clinical Psychologist',
-      description: 'Specializes in anxiety, depression, and trauma therapy with 10+ years of experience.',
-      photoUrl: 'https://randomuser.me/api/portraits/women/1.jpg',
-      rating: 4.8,
-      hourlyRate: 120, // $120 per hour
-      currency: 'usd',
-      availability: generateMockAvailability()
-    },
-    {
-      id: '2',
-      name: 'Dr. Michael Chen',
-      type: 'mental',
-      title: 'Psychiatrist',
-      description: 'Board-certified psychiatrist specializing in mood disorders and medication management.',
-      photoUrl: 'https://randomuser.me/api/portraits/men/2.jpg',
-      rating: 4.7,
-      hourlyRate: 150, // $150 per hour
-      currency: 'usd',
-      availability: generateMockAvailability()
-    },
-    {
-      id: '3',
-      name: 'Emma Rodriguez',
-      type: 'mental',
-      title: 'Licensed Therapist',
-      description: 'Specializes in cognitive behavioral therapy and mindfulness-based approaches.',
-      photoUrl: 'https://randomuser.me/api/portraits/women/3.jpg',
-      rating: 4.9,
-      hourlyRate: 100, // $100 per hour
-      currency: 'usd',
-      availability: generateMockAvailability()
-    }
-  ],
-  physical: [
-    {
-      id: '4',
-      name: 'Dr. James Wilson',
-      type: 'physical',
-      title: 'Physical Therapist',
-      description: 'Specializes in sports injuries and rehabilitation with a focus on holistic recovery.',
-      photoUrl: 'https://randomuser.me/api/portraits/men/4.jpg',
-      rating: 4.6,
-      hourlyRate: 90, // $90 per hour
-      currency: 'usd',
-      availability: generateMockAvailability()
-    },
-    {
-      id: '5',
-      name: 'Dr. Lisa Patel',
-      type: 'physical',
-      title: 'Nutritionist',
-      description: 'Registered dietitian specializing in personalized nutrition plans and wellness coaching.',
-      photoUrl: 'https://randomuser.me/api/portraits/women/5.jpg',
-      rating: 4.8,
-      hourlyRate: 85, // $85 per hour
-      currency: 'usd',
-      availability: generateMockAvailability()
-    },
-    {
-      id: '6',
-      name: 'Dr. Robert Thompson',
-      type: 'physical',
-      title: 'Physician',
-      description: 'Board-certified physician with expertise in preventive medicine and chronic disease management.',
-      photoUrl: 'https://randomuser.me/api/portraits/men/6.jpg',
-      rating: 4.9,
-      hourlyRate: 110, // $110 per hour
-      currency: 'usd',
-      availability: generateMockAvailability()
-    }
-  ]
-};
+export type SpecialistType = 'mental' | 'physical';
 
-// Function to generate mock availability
-function generateMockAvailability() {
-  const availability = [];
-  const now = new Date();
-
-  // Generate availability for the next 14 days
-  for (let i = 1; i <= 14; i++) {
-    const date = new Date(now);
-    date.setDate(now.getDate() + i);
-
-    // Skip weekends
-    if (date.getDay() === 0 || date.getDay() === 6) {
-      continue;
-    }
-
-    // Generate 3-5 time slots per day
-    const numSlots = Math.floor(Math.random() * 3) + 3;
-
-    // Start times (9 AM to 4 PM)
-    const startHours = [9, 10, 11, 13, 14, 15, 16];
-
-    // Randomly select time slots
-    const selectedHours = [];
-    while (selectedHours.length < numSlots && startHours.length > 0) {
-      const randomIndex = Math.floor(Math.random() * startHours.length);
-      selectedHours.push(startHours[randomIndex]);
-      startHours.splice(randomIndex, 1);
-    }
-
-    // Sort hours in ascending order
-    selectedHours.sort((a, b) => a - b);
-
-    // Create time slots
-    for (const hour of selectedHours) {
-      const startTime = new Date(date);
-      startTime.setHours(hour, 0, 0, 0);
-
-      const endTime = new Date(startTime);
-      endTime.setMinutes(endTime.getMinutes() + 60);
-
-      availability.push({
-        startTime,
-        endTime,
-        isBooked: false
-      });
-    }
-  }
-
-  return availability;
-}
+// No mock data - using real API endpoints only
 
 const SpecialistListScreen = ({ route, navigation }: any) => {
   const { type } = route.params;
@@ -159,14 +32,38 @@ const SpecialistListScreen = ({ route, navigation }: any) => {
   const fetchSpecialists = async () => {
     setLoading(true);
     try {
-      // Use mock data instead of Firebase
-      setTimeout(() => {
-        setSpecialists(MOCK_SPECIALISTS[type as SpecialistType] || []);
-        setLoading(false);
-      }, 1000); // Simulate network delay
+      console.log('Fetching care providers for specialty:', type);
+
+      // Use the aligned care providers API directly
+      const careProviders = await specialistService.getCareProviders(
+        type === 'mental' ? 'mental' : 'physical'
+      );
+      console.log('Fetched care providers:', careProviders);
+
+      // Convert care providers to specialist format for backward compatibility
+      const convertedSpecialists = careProviders.map(provider => ({
+        id: provider.id,
+        name: provider.user_name || provider.name || 'Unknown Provider',
+        email: provider.user_email || provider.email || '',
+        specialist_type: provider.specialty || type,
+        specialty: provider.specialty,
+        bio: provider.bio || `${provider.specialty} Health Specialist`,
+        hourly_rate: provider.hourly_rate || 10000, // Rate in cents
+        // Include additional care provider fields
+        license_number: provider.license_number,
+        years_experience: provider.years_experience,
+        education: provider.education,
+        certifications: provider.certifications,
+        is_accepting_patients: provider.is_accepting_patients,
+      }));
+
+      setSpecialists(convertedSpecialists);
     } catch (error) {
-      console.error('Error fetching specialists:', error);
-      Alert.alert('Error', 'Failed to load specialists. Please try again.');
+      console.error('Error fetching care providers:', error);
+      // No fallback data - show empty list
+      setSpecialists([]);
+      Alert.alert('Error', 'Failed to load specialists. Please check your connection and try again.');
+    } finally {
       setLoading(false);
     }
   };
@@ -181,40 +78,21 @@ const SpecialistListScreen = ({ route, navigation }: any) => {
       onPress={() => handleSpecialistSelect(item)}
     >
       <Image
-        source={
-          item.photoUrl
-            ? { uri: item.photoUrl }
-            : require('../../../assets/default-avatar.png')
-        }
-        defaultSource={require('../../../assets/default-avatar.png')}
+        source={require('../../../assets/default-avatar.png')}
         style={styles.specialistPhoto}
       />
       <View style={styles.specialistInfo}>
         <Text style={styles.specialistName}>{item.name}</Text>
-        <Text style={styles.specialistTitle}>{item.title}</Text>
-        {item.description && (
+        <Text style={styles.specialistTitle}>{`${item.specialty} Health Specialist`}</Text>
+        {item.bio && (
           <Text style={styles.specialistDescription} numberOfLines={2}>
-            {item.description}
+            {item.bio}
           </Text>
-        )}
-        {item.rating && (
-          <View style={styles.ratingContainer}>
-            {Array.from({ length: 5 }).map((_, index) => (
-              <Ionicons
-                key={`star-${item.id}-${index}`}
-                name={index < Math.floor(item.rating ?? 0) ? 'star' : 'star-outline'}
-                size={16}
-                color={index < Math.floor(item.rating ?? 0) ? '#FFC107' : '#ccc'}
-                style={styles.starIcon}
-              />
-            ))}
-            <Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
-          </View>
         )}
         <View style={styles.rateContainer}>
           <Ionicons name="cash-outline" size={16} color="#666" style={styles.rateIcon} />
           <Text style={styles.rateText}>
-            ${item.hourlyRate ?? (item.type === 'mental' ? 100 : 80)}/hour
+            ${Math.floor((item.hourly_rate || 10000) / 100)}/hour
           </Text>
         </View>
       </View>

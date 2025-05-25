@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
-import { updateUserEmail } from '../../services/firebase/userService';
+import { userService } from '../../services/api';
 
 interface ChangeEmailScreenProps {
   navigation: any;
@@ -30,59 +30,81 @@ const ChangeEmailScreen = ({ navigation }: ChangeEmailScreenProps) => {
 
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
-    
+
     // Email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     if (!newEmail) {
       newErrors.newEmail = 'New email is required';
     } else if (!emailRegex.test(newEmail)) {
       newErrors.newEmail = 'Please enter a valid email address';
     }
-    
+
     if (newEmail === currentEmail) {
       newErrors.newEmail = 'New email must be different from current email';
     }
-    
+
     if (!password) {
       newErrors.password = 'Password is required to verify your identity';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleUpdateEmail = async () => {
+    console.log('Update email button clicked');
     if (!validateForm()) {
+      console.log('Form validation failed');
       return;
     }
-    
+
+    console.log('Updating email from', currentEmail, 'to', newEmail);
     setLoading(true);
     try {
-      await updateUserEmail(newEmail, password);
+      // Update user email with password verification
+      const result = await userService.updateUserEmail(newEmail, password);
+      console.log('Email update successful:', result);
+
+      // Show success message and navigate back
       Alert.alert(
         'Success',
         'Your email has been updated successfully. Please sign in with your new email next time.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        [{
+          text: 'OK',
+          onPress: () => {
+            console.log('Navigating back to profile screen');
+            // Navigate back to profile screen
+            navigation.goBack();
+          }
+        }]
       );
     } catch (error: any) {
       console.error('Error updating email:', error);
-      
-      // Handle specific Firebase errors
-      if (error.code === 'auth/wrong-password') {
+
+      // Handle API errors
+      if (error.status === 400 || error.response?.status === 400) {
+        const errorMessage = error.response?.data?.detail || error.message;
+        if (errorMessage.includes('already in use')) {
+          setErrors({
+            ...errors,
+            newEmail: 'This email is already in use by another account.'
+          });
+        } else {
+          setErrors({
+            ...errors,
+            newEmail: errorMessage || 'Invalid email address.'
+          });
+        }
+      } else if (error.status === 401 || error.response?.status === 401) {
         setErrors({
           ...errors,
           password: 'Incorrect password. Please try again.'
         });
-      } else if (error.code === 'auth/email-already-in-use') {
-        setErrors({
-          ...errors,
-          newEmail: 'This email is already in use by another account.'
-        });
       } else {
         Alert.alert(
           'Error',
-          'Failed to update email. Please try again later.'
+          error.response?.data?.detail || error.message || 'Failed to update email. Please try again later.'
         );
       }
     } finally {

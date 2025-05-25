@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { SpecialistType } from '../../services/firebase/specialistService';
+export type SpecialistType = 'mental' | 'physical';
 
 const SpecialistTypeScreen = ({ navigation }: any) => {
   const handleTypeSelect = (type: SpecialistType) => {

@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { format, addMinutes } from 'date-fns';
 import { useAuth } from '../../hooks/useAuth';
+import { appointmentService } from '../../services/api';
 import { addAppointmentToCalendar } from '../../services/googleCalendarService';
 
 const DURATION_OPTIONS = [
@@ -73,17 +74,31 @@ const AppointmentDetailsScreen = ({ route, navigation }: AppointmentDetailsScree
       // Calculate the end time based on selected duration
       const endTime = calculateEndTime();
 
-      // Create a calendar event with Google Meet link
-      const { meetLink: newMeetLink } = await addAppointmentToCalendar(
-        specialist,
-        startTime,
-        endTime,
-        title,
-        description
-      );
+      // Create appointment via API
+      const appointmentData = {
+        care_provider_id: specialist.id,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        notes: description,
+      };
 
-      // Save the meet link
-      setMeetLink(newMeetLink);
+      const createdAppointment = await appointmentService.createAppointment(appointmentData);
+      console.log('Appointment created:', createdAppointment);
+
+      // Create a calendar event with Google Meet link (optional)
+      try {
+        const { meetLink: newMeetLink } = await addAppointmentToCalendar(
+          specialist,
+          startTime,
+          endTime,
+          title,
+          description
+        );
+        setMeetLink(newMeetLink);
+      } catch (calendarError) {
+        console.warn('Calendar integration failed:', calendarError);
+        // Continue without calendar integration
+      }
 
       // Show success message
       Alert.alert(
@@ -92,7 +107,7 @@ const AppointmentDetailsScreen = ({ route, navigation }: AppointmentDetailsScree
         [
           {
             text: 'OK',
-            onPress: () => {}
+            onPress: () => navigation.goBack()
           }
         ]
       );

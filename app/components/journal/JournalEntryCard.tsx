@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { format } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
-import { JournalEntry } from '../../services/firebase/journalService';
+import { JournalEntry } from '../../services/api';
 
 interface JournalEntryCardProps {
   entry: JournalEntry;
@@ -44,17 +44,25 @@ const getMoodColor = (mood: string) => {
 };
 
 const JournalEntryCard: React.FC<JournalEntryCardProps> = ({ entry, onPress }) => {
-  const entryDate = entry.date instanceof Date 
-    ? entry.date 
-    : new Date((entry.date as any).seconds * 1000);
-  
+  // Handle different date formats from API
+  let entryDate: Date;
+  if (entry.date instanceof Date) {
+    entryDate = entry.date;
+  } else if (typeof entry.date === 'string') {
+    entryDate = new Date(entry.date);
+  } else if (entry.created_at) {
+    entryDate = new Date(entry.created_at);
+  } else {
+    entryDate = new Date();
+  }
+
   const formattedDate = format(entryDate, 'MMMM d, yyyy');
-  const moodIcon = getMoodIcon(entry.mood);
-  const moodColor = getMoodColor(entry.mood);
-  
+  const moodIcon = getMoodIcon(entry.mood || 'neutral');
+  const moodColor = getMoodColor(entry.mood || 'neutral');
+
   return (
-    <TouchableOpacity 
-      style={styles.container} 
+    <TouchableOpacity
+      style={styles.container}
       onPress={() => onPress(entry)}
       activeOpacity={0.7}
     >
@@ -65,16 +73,16 @@ const JournalEntryCard: React.FC<JournalEntryCardProps> = ({ entry, onPress }) =
           <Text style={styles.moodText}>{entry.mood}</Text>
         </View>
       </View>
-      
+
       <Text style={styles.notes} numberOfLines={3}>
-        {entry.notes}
+        {entry.notes || entry.content || entry.quickNote || 'No notes'}
       </Text>
-      
+
       {entry.photoUrls && entry.photoUrls.length > 0 && (
         <View style={styles.photoContainer}>
-          <Image 
-            source={{ uri: entry.photoUrls[0] }} 
-            style={styles.photo} 
+          <Image
+            source={{ uri: entry.photoUrls[0] }}
+            style={styles.photo}
             resizeMode="cover"
           />
           {entry.photoUrls.length > 1 && (
@@ -84,7 +92,7 @@ const JournalEntryCard: React.FC<JournalEntryCardProps> = ({ entry, onPress }) =
           )}
         </View>
       )}
-      
+
       {entry.sharedWithCoach && (
         <View style={styles.sharedBadge}>
           <Ionicons name="eye-outline" size={12} color="white" />

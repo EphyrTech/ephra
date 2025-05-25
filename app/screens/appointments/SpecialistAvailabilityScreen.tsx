@@ -14,8 +14,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { format, addDays, isSameDay } from 'date-fns';
 import {
   Specialist,
-  TimeSlot
-} from '../../services/firebase/specialistService';
+  specialistService
+} from '../../services/api';
+
+export interface TimeSlot {
+  startTime: Date | { seconds: number };
+  endTime: Date | { seconds: number };
+  isBooked: boolean;
+}
 
 const SpecialistAvailabilityScreen = ({ route, navigation }: any) => {
   const { specialist } = route.params;
@@ -38,25 +44,28 @@ const SpecialistAvailabilityScreen = ({ route, navigation }: any) => {
   const fetchAvailableDates = async () => {
     setLoading(true);
     try {
-      // Extract unique dates from specialist's availability
+      console.log('Fetching availability for specialist:', specialist.id);
+
+      // Fetch availability from API
+      const availability = await specialistService.getSpecialistAvailability(specialist.id);
+      console.log('Fetched availability:', availability);
+
+      // Extract unique dates from availability
       const availabilityDates = new Set<string>();
 
-      specialist.availability?.forEach(slot => {
-        const slotDate = slot.startTime instanceof Date
-          ? slot.startTime
-          : new Date((slot.startTime as any).seconds * 1000);
+      availability.forEach(slot => {
+        const slotDate = new Date(slot.start_time);
 
-        if (!slot.isBooked) {
+        if (slot.is_available) {
           // Format as YYYY-MM-DD to ensure uniqueness
-          const dateString = `${slotDate.getFullYear()}-${slotDate.getMonth() + 1}-${slotDate.getDate()}`;
+          const dateString = slotDate.toISOString().split('T')[0];
           availabilityDates.add(dateString);
         }
       });
 
       // Convert back to Date objects
       const dates = Array.from(availabilityDates).map(dateString => {
-        const [year, month, day] = dateString.split('-').map(Number);
-        return new Date(year, month - 1, day);
+        return new Date(dateString + 'T00:00:00');
       });
 
       // Sort dates
@@ -69,13 +78,12 @@ const SpecialistAvailabilityScreen = ({ route, navigation }: any) => {
         setSelectedDate(dates[0]);
       }
 
-      // Simulate network delay
-      setTimeout(() => {
-        setLoading(false);
-      }, 500);
+      setLoading(false);
     } catch (error) {
-      console.error('Error processing available dates:', error);
-      Alert.alert('Error', 'Failed to load available dates. Please try again.');
+      console.error('Error fetching available dates:', error);
+      // Fallback to mock data or empty state
+      setAvailableDates([]);
+      Alert.alert('Notice', 'No availability data found. This may be demo data.');
       setLoading(false);
     }
   };
@@ -85,43 +93,40 @@ const SpecialistAvailabilityScreen = ({ route, navigation }: any) => {
 
     setLoading(true);
     try {
-      // Filter time slots for the selected date that are not booked
-      const availableSlots = specialist.availability?.filter(slot => {
-        const slotDate = slot.startTime instanceof Date
-          ? slot.startTime
-          : new Date((slot.startTime as any).seconds * 1000);
+      // Fetch availability from API
+      const availability = await specialistService.getSpecialistAvailability(specialist.id);
 
-        return (
-          slotDate.getDate() === selectedDate.getDate() &&
-          slotDate.getMonth() === selectedDate.getMonth() &&
-          slotDate.getFullYear() === selectedDate.getFullYear() &&
-          !slot.isBooked
-        );
-      }) || [];
+      // Filter time slots for the selected date that are available
+      const selectedDateString = selectedDate.toISOString().split('T')[0];
+
+      const availableSlots = availability.filter(slot => {
+        const slotDate = new Date(slot.start_time);
+        const slotDateString = slotDate.toISOString().split('T')[0];
+
+        return slotDateString === selectedDateString && slot.is_available;
+      });
+
+      // Convert to the expected TimeSlot format
+      const convertedSlots: TimeSlot[] = availableSlots.map(slot => ({
+        startTime: new Date(slot.start_time),
+        endTime: new Date(slot.end_time),
+        isBooked: !slot.is_available
+      }));
 
       // Sort by start time
-      availableSlots.sort((a, b) => {
-        const timeA = a.startTime instanceof Date
-          ? a.startTime.getTime()
-          : (a.startTime as any).seconds * 1000;
-
-        const timeB = b.startTime instanceof Date
-          ? b.startTime.getTime()
-          : (b.startTime as any).seconds * 1000;
-
+      convertedSlots.sort((a, b) => {
+        const timeA = (a.startTime as Date).getTime();
+        const timeB = (b.startTime as Date).getTime();
         return timeA - timeB;
       });
 
-      setTimeSlots(availableSlots);
+      setTimeSlots(convertedSlots);
       setSelectedTimeSlot(null); // Reset selected time slot when date changes
-
-      // Simulate network delay
-      setTimeout(() => {
-        setLoading(false);
-      }, 500);
+      setLoading(false);
     } catch (error) {
-      console.error('Error processing time slots:', error);
-      Alert.alert('Error', 'Failed to load time slots. Please try again.');
+      console.error('Error fetching time slots:', error);
+      // Fallback to empty slots
+      setTimeSlots([]);
       setLoading(false);
     }
   };

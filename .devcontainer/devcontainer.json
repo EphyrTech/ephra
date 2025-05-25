@@ -1,134 +1,54 @@
 {
-  "name": "Ephra React Native Development",
-  "dockerComposeFile": "docker-compose.yml",
-  "service": "app",
-  "workspaceFolder": "/workspace",
-  "forwardPorts": [19000, 19001, 19002, 19006, 8081],
-  "portsAttributes": {
-    "19000": {
-      "label": "Expo App",
-      "onAutoForward": "notify"
-    },
-    "19001": {
-      "label": "Expo Metro",
-      "onAutoForward": "notify"
-    },
-    "19002": {
-      "label": "Expo Dev Tools",
-      "onAutoForward": "notify"
-    },
-    "19006": {
-      "label": "Expo Web",
-      "onAutoForward": "notify"
-    },
-    "8081": {
-      "label": "Metro Bundler",
-      "onAutoForward": "notify"
-    }
-  },
-  "postCreateCommand": "npm install",
+  "name": "FastAPI Development with uv",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "api",
+  "workspaceFolder": "/app",
   "customizations": {
     "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.formatting.provider": "black",
+        "python.formatting.blackPath": "/usr/local/bin/black",
+        "editor.formatOnSave": true,
+        "editor.rulers": [88],
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true
+        },
+        "python.analysis.typeCheckingMode": "basic",
+        "python.analysis.autoImportCompletions": true,
+        "files.exclude": {
+          "**/__pycache__": true,
+          "**/.pytest_cache": true,
+          "**/.mypy_cache": true,
+          "**/.uv": true
+        }
+      },
       "extensions": [
-        // Core development tools
-        "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode",
-        "ms-vscode.vscode-typescript-next",
-        "formulahendry.auto-rename-tag",
-        "streetsidesoftware.code-spell-checker",
-        "naumovs.color-highlight",
-        "dsznajder.es7-react-js-snippets",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-azuretools.vscode-docker",
+        "njpwerner.autodocstring",
+        "matangover.mypy",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "tamasfe.even-better-toml",
+        "yzhang.markdown-all-in-one",
+        "timonwong.shellcheck",
+        "redhat.vscode-yaml",
+        "eamodio.gitlens",
         "github.copilot",
         "github.vscode-pull-request-github",
-        "eamodio.gitlens",
-        "wix.vscode-import-cost",
         "ms-vsliveshare.vsliveshare",
-        "christian-kohler.path-intellisense",
-        "bradlc.vscode-tailwindcss",
         "gruntfuggly.todo-tree",
-        "redhat.vscode-yaml",
-        "ms-vscode-remote.remote-containers",
-
-        // React Native specific
-        "msjsdiag.vscode-react-native",
-        "amandeepmittal.expo-snippets",
-        "jundat95.react-native-snippet",
-        "rnative.react-native-tools",
-
-        // Firebase specific
-        "toba.vsfire",
-        "jsayol.firebase-explorer",
-
-        // Mobile development
-        "Orta.vscode-jest",
-        "ms-azuretools.vscode-docker",
-        "cssho.vscode-svgviewer",
-        "quicktype.quicktype",
-
-        // Debugging and performance
-        "msjsdiag.debugger-for-chrome",
-        "ms-vscode.js-debug",
-        "ms-vscode.js-debug-companion",
-        "firefox-devtools.vscode-firefox-debug",
-
-        // Code quality and security
-        "sonarsource.sonarlint-vscode",
-        "firsttris.vscode-jest-runner",
+        "streetsidesoftware.code-spell-checker",
         "VisualStudioExptTeam.vscodeintellicode",
-        "DavidAnson.vscode-markdownlint",
-        "yzhang.markdown-all-in-one",
-
-        // UI/UX development
-        "deinsoftware.colorize-brackets",
-        "miguelsolorio.fluent-icons",
-        "pkief.material-icon-theme",
-        "bierner.color-info",
-        "kisstkondoros.vscode-gutter-preview"
-      ],
-      "settings": {
-        "editor.formatOnSave": true,
-        "editor.codeActionsOnSave": {
-          "source.fixAll.eslint": "explicit"
-        },
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "typescript.tsdk": "node_modules/typescript/lib",
-        "typescript.enablePromptUseWorkspaceTsdk": true,
-        "eslint.validate": [
-          "javascript",
-          "javascriptreact",
-          "typescript",
-          "typescriptreact"
-        ],
-        "files.exclude": {
-          "**/.git": true,
-          "**/.svn": true,
-          "**/.hg": true,
-          "**/CVS": true,
-          "**/.DS_Store": true,
-          "**/node_modules": false
-        },
-        "editor.tabSize": 2,
-        "editor.insertSpaces": true,
-        "editor.detectIndentation": false,
-        "files.eol": "\n",
-        "files.insertFinalNewline": true,
-        "files.trimTrailingWhitespace": true,
-        "javascript.preferences.importModuleSpecifier": "relative",
-        "typescript.preferences.importModuleSpecifier": "relative",
-        "javascript.updateImportsOnFileMove.enabled": "always",
-        "typescript.updateImportsOnFileMove.enabled": "always",
-        "editor.rulers": [100],
-        "workbench.colorCustomizations": {
-          "editorRuler.foreground": "#3f51b533"
-        }
-      }
+        "DavidAnson.vscode-markdownlint"
+      ]
     }
   },
-  "remoteUser": "node",
-  "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "lts"
-    }
-  }
+  "forwardPorts": [8000, 5432, 5050],
+  "postCreateCommand": "pip install uv && uv pip install -r requirements.txt && uv pip install black isort pylint mypy pytest pytest-cov",
+  "remoteUser": "root"
 }

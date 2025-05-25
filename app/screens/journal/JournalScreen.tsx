@@ -10,11 +10,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../hooks/useAuth';
 import {
-  getUserJournalEntries,
-  JournalEntry
-} from '../../services/firebase/journalService';
+  JournalEntry,
+  journalService
+} from '../../services/api';
 import JournalEntryCard from '../../components/journal/JournalEntryCard';
 
 // Interface for grouped entries by date
@@ -36,6 +37,16 @@ const JournalScreen = ({ navigation }: any) => {
     }
   }, [user]);
 
+  // Refresh entries when screen comes into focus (e.g., after saving an entry)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user) {
+        console.log('Journal screen focused, refreshing entries...');
+        fetchJournalEntries();
+      }
+    }, [user])
+  );
+
   // Group entries by date
   useEffect(() => {
     if (entries.length > 0) {
@@ -50,9 +61,18 @@ const JournalScreen = ({ navigation }: any) => {
 
     setLoading(true);
     try {
-      const journalEntries = await getUserJournalEntries(user.uid);
-      // No need to sort here as Firebase query already sorts by createdAt
-      setEntries(journalEntries);
+      console.log('Fetching journal entries for user:', user.id);
+      const journalEntries = await journalService.getJournalEntries();
+      console.log('Fetched journal entries:', journalEntries);
+      console.log('Number of entries:', journalEntries.length);
+
+      // Sort by date (newest first)
+      const sortedEntries = journalEntries.sort((a, b) => {
+        const dateA = new Date(a.date || a.created_at || 0);
+        const dateB = new Date(b.date || b.created_at || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
+      setEntries(sortedEntries);
     } catch (error) {
       console.error('Error fetching journal entries:', error);
     } finally {
@@ -65,9 +85,17 @@ const JournalScreen = ({ navigation }: any) => {
 
     // Group entries by date string
     entries.forEach(entry => {
-      const entryDate = entry.date instanceof Date
-        ? entry.date
-        : new Date((entry.date as any)?.seconds * 1000);
+      let entryDate: Date;
+
+      if (entry.date instanceof Date) {
+        entryDate = entry.date;
+      } else if (typeof entry.date === 'string') {
+        entryDate = new Date(entry.date);
+      } else if (entry.created_at) {
+        entryDate = new Date(entry.created_at);
+      } else {
+        entryDate = new Date();
+      }
 
       const dateString = entryDate.toDateString();
 
@@ -97,7 +125,9 @@ const JournalScreen = ({ navigation }: any) => {
   };
 
   const handleEntryPress = (entry: JournalEntry) => {
-    navigation.navigate('JournalEntry', { entry });
+    console.log('Journal: Opening entry for editing:', entry.id);
+    // Pass entryId to trigger API fetch for latest data
+    navigation.navigate('JournalEntry', { entryId: entry.id });
   };
 
   const handleDayPress = (date: Date) => {

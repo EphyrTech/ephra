@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,12 +9,12 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../hooks/useAuth';
-import { deleteUserAccount } from '../../services/firebase/userService';
+  ScrollView,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../../hooks/useAuth";
+import { authService } from "../../services/api";
 
 interface DeleteAccountScreenProps {
   navigation: any;
@@ -22,22 +22,22 @@ interface DeleteAccountScreenProps {
 
 const DeleteAccountScreen = ({ navigation }: DeleteAccountScreenProps) => {
   const { user } = useAuth();
-  const [password, setPassword] = useState('');
-  const [confirmText, setConfirmText] = useState('');
+  const [password, setPassword] = useState("");
+  const [confirmText, setConfirmText] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
-    
+    const newErrors: { [key: string]: string } = {};
+
     if (!password) {
-      newErrors.password = 'Password is required to verify your identity';
+      newErrors.password = "Password is required to verify your identity";
     }
-    
-    if (confirmText !== 'DELETE') {
-      newErrors.confirmText = 'Please type DELETE to confirm';
+
+    if (confirmText !== "DELETE") {
+      newErrors.confirmText = "Please type DELETE to confirm";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -46,48 +46,48 @@ const DeleteAccountScreen = ({ navigation }: DeleteAccountScreenProps) => {
     if (!validateForm()) {
       return;
     }
-    
+
     Alert.alert(
-      'Confirm Account Deletion',
-      'This action cannot be undone. All your data will be permanently deleted. Are you sure you want to proceed?',
+      "Confirm Account Deletion",
+      "This action cannot be undone. All your data will be permanently deleted. Are you sure you want to proceed?",
       [
         {
-          text: 'Cancel',
-          style: 'cancel'
+          text: "Cancel",
+          style: "cancel",
         },
         {
-          text: 'Delete Account',
-          style: 'destructive',
-          onPress: confirmDeleteAccount
-        }
+          text: "Delete Account",
+          style: "destructive",
+          onPress: confirmDeleteAccount,
+        },
       ]
     );
   };
 
   const confirmDeleteAccount = async () => {
     if (!user) return;
-    
+
     setLoading(true);
     try {
-      await deleteUserAccount(password);
+      await authService.deleteAccount(password);
       // The auth state change will automatically redirect to login screen
       Alert.alert(
-        'Account Deleted',
-        'Your account has been successfully deleted.'
+        "Account Deleted",
+        "Your account has been successfully deleted."
       );
     } catch (error: any) {
-      console.error('Error deleting account:', error);
-      
-      // Handle specific Firebase errors
-      if (error.code === 'auth/wrong-password') {
+      console.error("Error deleting account:", error);
+
+      // Handle API errors
+      if (error.status === 401) {
         setErrors({
           ...errors,
-          password: 'Incorrect password. Please try again.'
+          password: "Incorrect password. Please try again.",
         });
       } else {
         Alert.alert(
-          'Error',
-          'Failed to delete account. Please try again later.'
+          "Error",
+          "Failed to delete account. Please try again later."
         );
       }
     } finally {
@@ -99,7 +99,7 @@ const DeleteAccountScreen = ({ navigation }: DeleteAccountScreenProps) => {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.header}>
           <TouchableOpacity
@@ -114,16 +114,29 @@ const DeleteAccountScreen = ({ navigation }: DeleteAccountScreenProps) => {
 
         <ScrollView style={styles.content}>
           <View style={styles.warningContainer}>
-            <Ionicons name="warning" size={40} color="#FF5252" style={styles.warningIcon} />
-            <Text style={styles.warningTitle}>Warning: This action is permanent</Text>
-            <Text style={styles.warningText}>
-              Deleting your account will:
+            <Ionicons
+              name="warning"
+              size={40}
+              color="#FF5252"
+              style={styles.warningIcon}
+            />
+            <Text style={styles.warningTitle}>
+              Warning: This action is permanent
             </Text>
+            <Text style={styles.warningText}>Deleting your account will:</Text>
             <View style={styles.bulletPoints}>
-              <Text style={styles.bulletPoint}>• Remove all your personal information</Text>
-              <Text style={styles.bulletPoint}>• Delete all your journal entries</Text>
-              <Text style={styles.bulletPoint}>• Cancel all scheduled appointments</Text>
-              <Text style={styles.bulletPoint}>• Remove your profile from our system</Text>
+              <Text style={styles.bulletPoint}>
+                • Remove all your personal information
+              </Text>
+              <Text style={styles.bulletPoint}>
+                • Delete all your journal entries
+              </Text>
+              <Text style={styles.bulletPoint}>
+                • Cancel all scheduled appointments
+              </Text>
+              <Text style={styles.bulletPoint}>
+                • Remove your profile from our system
+              </Text>
             </View>
             <Text style={styles.warningText}>
               This action cannot be undone. Please be certain.
@@ -138,7 +151,7 @@ const DeleteAccountScreen = ({ navigation }: DeleteAccountScreenProps) => {
               onChangeText={(text) => {
                 setPassword(text);
                 if (errors.password) {
-                  setErrors({ ...errors, password: '' });
+                  setErrors({ ...errors, password: "" });
                 }
               }}
               placeholder="Enter your password"
@@ -158,7 +171,7 @@ const DeleteAccountScreen = ({ navigation }: DeleteAccountScreenProps) => {
               onChangeText={(text) => {
                 setConfirmText(text);
                 if (errors.confirmText) {
-                  setErrors({ ...errors, confirmText: '' });
+                  setErrors({ ...errors, confirmText: "" });
                 }
               }}
               placeholder="Type DELETE"
@@ -178,7 +191,12 @@ const DeleteAccountScreen = ({ navigation }: DeleteAccountScreenProps) => {
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <>
-                <Ionicons name="trash-outline" size={20} color="#fff" style={styles.buttonIcon} />
+                <Ionicons
+                  name="trash-outline"
+                  size={20}
+                  color="#fff"
+                  style={styles.buttonIcon}
+                />
                 <Text style={styles.deleteButtonText}>Delete My Account</Text>
               </>
             )}
@@ -199,24 +217,24 @@ const DeleteAccountScreen = ({ navigation }: DeleteAccountScreenProps) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   backButton: {
     padding: 8,
   },
   title: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
   },
   placeholder: {
     width: 40,
@@ -226,36 +244,36 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   warningContainer: {
-    backgroundColor: '#FFEBEE',
+    backgroundColor: "#FFEBEE",
     borderRadius: 8,
     padding: 16,
     marginBottom: 24,
-    alignItems: 'center',
+    alignItems: "center",
   },
   warningIcon: {
     marginBottom: 12,
   },
   warningTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#FF5252',
+    fontWeight: "600",
+    color: "#FF5252",
     marginBottom: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
   warningText: {
     fontSize: 14,
-    color: '#333',
+    color: "#333",
     marginBottom: 12,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
   },
   bulletPoints: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
     marginBottom: 12,
   },
   bulletPoint: {
     fontSize: 14,
-    color: '#333',
+    color: "#333",
     marginBottom: 6,
     lineHeight: 20,
   },
@@ -264,54 +282,54 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: '#333',
+    color: "#333",
     borderWidth: 1,
-    borderColor: '#f5f5f5',
+    borderColor: "#f5f5f5",
   },
   inputError: {
-    borderColor: '#FF5252',
+    borderColor: "#FF5252",
   },
   errorText: {
-    color: '#FF5252',
+    color: "#FF5252",
     fontSize: 12,
     marginTop: 4,
   },
   deleteButton: {
-    backgroundColor: '#FF5252',
+    backgroundColor: "#FF5252",
     borderRadius: 8,
     padding: 15,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 10,
     marginBottom: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
   },
   disabledButton: {
-    backgroundColor: '#ffcdd2',
+    backgroundColor: "#ffcdd2",
   },
   buttonIcon: {
     marginRight: 8,
   },
   deleteButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   cancelButton: {
     padding: 15,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 20,
   },
   cancelButtonText: {
-    color: '#666',
+    color: "#666",
     fontSize: 16,
   },
 });

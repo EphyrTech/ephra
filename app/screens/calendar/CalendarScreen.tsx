@@ -13,13 +13,11 @@ import { Ionicons } from '@expo/vector-icons';
 import Calendar from '../../components/calendar/Calendar';
 import { useAuth } from '../../hooks/useAuth';
 import {
-  getUserAppointments,
-  Appointment
-} from '../../services/firebase/appointmentService';
-import {
-  getUserJournalEntries,
-  JournalEntry
-} from '../../services/firebase/journalService';
+  Appointment,
+  appointmentService,
+  JournalEntry,
+  journalService
+} from '../../services/api';
 
 type CalendarEvent = {
   id: string;
@@ -58,7 +56,7 @@ const CalendarScreen = ({ navigation }: any) => {
       // Fetch appointments with error handling
       let appointments: Appointment[] = [];
       try {
-        appointments = await getUserAppointments(user.uid);
+        appointments = await appointmentService.getUserAppointments();
       } catch (appointmentError) {
         console.error('Error fetching appointments:', appointmentError);
         // Continue with empty appointments array
@@ -67,7 +65,7 @@ const CalendarScreen = ({ navigation }: any) => {
       // Fetch journal entries with error handling
       let journalEntries: JournalEntry[] = [];
       try {
-        journalEntries = await getUserJournalEntries(user.uid);
+        journalEntries = await journalService.getJournalEntries();
       } catch (journalError) {
         console.error('Error fetching journal entries:', journalError);
         // Continue with empty journal entries array
@@ -90,9 +88,17 @@ const CalendarScreen = ({ navigation }: any) => {
 
     // Process appointments
     appointments.forEach(appointment => {
-      const startDate = appointment.startTime instanceof Date
-        ? appointment.startTime
-        : new Date((appointment.startTime as any).seconds * 1000);
+      let startDate: Date;
+
+      if (appointment.start_time) {
+        startDate = new Date(appointment.start_time);
+      } else if (appointment.time) {
+        startDate = new Date(appointment.time);
+      } else if (appointment.created_at) {
+        startDate = new Date(appointment.created_at);
+      } else {
+        startDate = new Date();
+      }
 
       const dateString = format(startDate, 'yyyy-MM-dd');
 
@@ -105,9 +111,17 @@ const CalendarScreen = ({ navigation }: any) => {
 
     // Process journal entries
     journalEntries.forEach(entry => {
-      const entryDate = entry.date instanceof Date
-        ? entry.date
-        : new Date((entry.date as any).seconds * 1000);
+      let entryDate: Date;
+
+      if (entry.date instanceof Date) {
+        entryDate = entry.date;
+      } else if (typeof entry.date === 'string') {
+        entryDate = new Date(entry.date);
+      } else if (entry.created_at) {
+        entryDate = new Date(entry.created_at);
+      } else {
+        entryDate = new Date();
+      }
 
       const dateString = format(entryDate, 'yyyy-MM-dd');
 
@@ -131,15 +145,23 @@ const CalendarScreen = ({ navigation }: any) => {
 
     // Add appointments for the selected day
     appointments.forEach(appointment => {
-      const startDate = appointment.startTime instanceof Date
-        ? appointment.startTime
-        : new Date((appointment.startTime as any).seconds * 1000);
+      let startDate: Date;
+
+      if (appointment.start_time) {
+        startDate = new Date(appointment.start_time);
+      } else if (appointment.time) {
+        startDate = new Date(appointment.time);
+      } else if (appointment.created_at) {
+        startDate = new Date(appointment.created_at);
+      } else {
+        startDate = new Date();
+      }
 
       if (isSameDay(startDate, date)) {
         eventsForDay.push({
           id: appointment.id || '',
           type: 'appointment',
-          title: appointment.title,
+          title: `Appointment`, // Generic title since API might not have title field
           time: format(startDate, 'h:mm a'),
           data: appointment
         });
@@ -148,15 +170,23 @@ const CalendarScreen = ({ navigation }: any) => {
 
     // Add journal entries for the selected day
     journalEntries.forEach(entry => {
-      const entryDate = entry.date instanceof Date
-        ? entry.date
-        : new Date((entry.date as any).seconds * 1000);
+      let entryDate: Date;
+
+      if (entry.date instanceof Date) {
+        entryDate = entry.date;
+      } else if (typeof entry.date === 'string') {
+        entryDate = new Date(entry.date);
+      } else if (entry.created_at) {
+        entryDate = new Date(entry.created_at);
+      } else {
+        entryDate = new Date();
+      }
 
       if (isSameDay(entryDate, date)) {
         eventsForDay.push({
           id: entry.id || '',
           type: 'journal',
-          title: entry.mood,
+          title: entry.mood || 'Journal Entry',
           data: entry
         });
       }
@@ -165,11 +195,27 @@ const CalendarScreen = ({ navigation }: any) => {
     // Sort events by time (appointments first, then journal entries)
     eventsForDay.sort((a, b) => {
       if (a.type === 'appointment' && b.type === 'appointment') {
-        const aTime = (a.data as Appointment).startTime;
-        const bTime = (b.data as Appointment).startTime;
+        const aAppointment = a.data as Appointment;
+        const bAppointment = b.data as Appointment;
 
-        const aDate = aTime instanceof Date ? aTime : new Date((aTime as any).seconds * 1000);
-        const bDate = bTime instanceof Date ? bTime : new Date((bTime as any).seconds * 1000);
+        let aDate: Date;
+        let bDate: Date;
+
+        if (aAppointment.start_time) {
+          aDate = new Date(aAppointment.start_time);
+        } else if (aAppointment.time) {
+          aDate = new Date(aAppointment.time);
+        } else {
+          aDate = new Date(aAppointment.created_at || 0);
+        }
+
+        if (bAppointment.start_time) {
+          bDate = new Date(bAppointment.start_time);
+        } else if (bAppointment.time) {
+          bDate = new Date(bAppointment.time);
+        } else {
+          bDate = new Date(bAppointment.created_at || 0);
+        }
 
         return aDate.getTime() - bDate.getTime();
       }
@@ -195,11 +241,11 @@ const CalendarScreen = ({ navigation }: any) => {
     if (user) {
       // Use Promise.allSettled to handle both promises regardless of success/failure
       Promise.allSettled([
-        getUserAppointments(user.uid).catch(error => {
+        appointmentService.getUserAppointments().catch(error => {
           console.error('Error fetching appointments:', error);
           return []; // Return empty array on error
         }),
-        getUserJournalEntries(user.uid).catch(error => {
+        journalService.getJournalEntries().catch(error => {
           console.error('Error fetching journal entries:', error);
           return []; // Return empty array on error
         })

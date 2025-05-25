@@ -18,10 +18,8 @@ import { format } from 'date-fns';
 import { useAuth } from '../../hooks/useAuth';
 import {
   JournalEntry,
-  createJournalEntry,
-  updateJournalEntry,
-  uploadJournalPhoto
-} from '../../services/firebase/journalService';
+  journalService
+} from '../../services/api';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { Audio } from 'expo-av';
@@ -63,7 +61,7 @@ const SLEEP_OPTIONS = [
 
 const JournalEntryScreen = ({ route, navigation }: any) => {
   const { user } = useAuth();
-  const { entry: existingEntry, date: selectedDate } = route.params || {};
+  const { entry: existingEntry, entryId, date: selectedDate } = route.params || {};
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -82,6 +80,7 @@ const JournalEntryScreen = ({ route, navigation }: any) => {
   const [pdfFiles, setPdfFiles] = useState<{uri: string; name: string}[]>([]);
   const recordingTimer = useRef<NodeJS.Timeout | null>(null);
   const [entry, setEntry] = useState<Partial<JournalEntry>>({
+    title: '', // Required field for API
     mood: 'good',
     notes: '',
     quickNote: '',
@@ -95,6 +94,68 @@ const JournalEntryScreen = ({ route, navigation }: any) => {
     sleep: '',
   });
 
+  // Fetch entry details by ID if entryId is provided
+  useEffect(() => {
+    const fetchEntryDetails = async () => {
+      if (entryId && !existingEntry) {
+        console.log('JournalEntry: Fetching entry details for ID:', entryId);
+        setLoading(true);
+        try {
+          const entryDetails = await journalService.getJournalEntry(entryId);
+          console.log('JournalEntry: Fetched entry details:', entryDetails);
+          setEntry(entryDetails);
+
+          // Initialize all the form fields with the fetched data
+          if (entryDetails.emotions) {
+            setSelectedEmotions(entryDetails.emotions);
+          }
+
+          const noteText = entryDetails.quickNote || entryDetails.notes || entryDetails.content || '';
+          if (noteText) {
+            setQuickNote(noteText);
+          }
+
+          // Initialize photos
+          if (entryDetails.photoUrls && entryDetails.photoUrls.length > 0) {
+            const existingPhotos = entryDetails.photoUrls.map(url => ({
+              uri: url,
+              localUri: url
+            }));
+            setPhotos(existingPhotos);
+          }
+
+          // Initialize voice memos
+          if (entryDetails.voiceMemoUrls && entryDetails.voiceMemoUrls.length > 0 &&
+              entryDetails.voiceMemoDurations && entryDetails.voiceMemoDurations.length > 0) {
+            const existingMemos = entryDetails.voiceMemoUrls.map((url, index) => ({
+              uri: url,
+              duration: entryDetails.voiceMemoDurations?.[index] || 0
+            }));
+            setVoiceMemos(existingMemos);
+          }
+
+          // Initialize PDF files
+          if (entryDetails.pdfUrls && entryDetails.pdfUrls.length > 0 &&
+              entryDetails.pdfNames && entryDetails.pdfNames.length > 0) {
+            const existingPdfs = entryDetails.pdfUrls.map((url, index) => ({
+              uri: url,
+              name: entryDetails.pdfNames?.[index] || 'Document.pdf'
+            }));
+            setPdfFiles(existingPdfs);
+          }
+        } catch (error) {
+          console.error('JournalEntry: Error fetching entry details:', error);
+          Alert.alert('Error', 'Failed to load journal entry details');
+          navigation.goBack();
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchEntryDetails();
+  }, [entryId, existingEntry]);
+
   // Initialize the entry date from the route params or use current date
   useEffect(() => {
     if (existingEntry) {
@@ -104,9 +165,10 @@ const JournalEntryScreen = ({ route, navigation }: any) => {
       if (existingEntry.emotions) {
         setSelectedEmotions(existingEntry.emotions);
       }
-      // Initialize quick note if it exists
-      if (existingEntry.quickNote) {
-        setQuickNote(existingEntry.quickNote);
+      // Initialize quick note if it exists (check multiple fields for compatibility)
+      const noteText = existingEntry.quickNote || existingEntry.notes || existingEntry.content || '';
+      if (noteText) {
+        setQuickNote(noteText);
       }
       // Initialize photos if they exist
       if (existingEntry.photoUrls && existingEntry.photoUrls.length > 0) {
@@ -163,6 +225,8 @@ const JournalEntryScreen = ({ route, navigation }: any) => {
   }, [selectedDate, existingEntry]);
 
   const handleSave = async () => {
+    console.log('handleSave called, user:', user);
+
     if (!user) {
       Alert.alert(
         'Sign In Required',
@@ -181,12 +245,22 @@ const JournalEntryScreen = ({ route, navigation }: any) => {
       return;
     }
 
-    if (!entry.mood || !entry.notes) {
+    if (!entry.mood || (!entry.notes && !quickNote)) {
       Alert.alert('Missing Information', 'Please select a mood and add some notes');
       return;
     }
 
+    // Ensure title is set (required by API)
+    if (!entry.title || entry.title.trim() === '') {
+      const defaultTitle = `Journal Entry - ${format(new Date(), 'MMM d, yyyy')}`;
+      setEntry(prev => ({ ...prev, title: defaultTitle }));
+    }
+
     setSaving(true);
+    console.log('Starting to save journal entry...');
+    console.log('Entry mood:', entry.mood);
+    console.log('Quick note:', quickNote);
+    console.log('Entry notes:', entry.notes);
 
     try {
       // Safely handle date conversion
@@ -201,11 +275,11 @@ const JournalEntryScreen = ({ route, navigation }: any) => {
 
       // Upload photos if there are any new ones
       const photoPromises = photos.map(async (photo) => {
-        // Only upload photos that don't already have a Firebase URL
-        if (!photo.uri.startsWith('https://')) {
+        // Only upload photos that don't already have a URL
+        if (!photo.uri.startsWith('http')) {
           try {
             const entryId = entry.id || 'new';
-            const result = await uploadJournalPhoto(user.uid, entryId, photo.localUri);
+            const result = await journalService.uploadJournalPhoto(user.id, entryId, photo.localUri);
             return result.url;
           } catch (error) {
             console.error('Error uploading photo:', error);
@@ -226,9 +300,11 @@ const JournalEntryScreen = ({ route, navigation }: any) => {
       const pdfNames = pdfFiles.map(pdf => pdf.name);
 
       const entryData: JournalEntry = {
-        userId: user.uid,
+        user_id: user.id,
+        title: entry.title || `Journal Entry - ${format(entryDate, 'MMM d, yyyy')}`, // Use existing title or generate one
         mood: entry.mood ?? 'good',
-        notes: entry.notes ?? '',
+        notes: quickNote || entry.notes || '',
+        content: quickNote || entry.notes || '', // For API compatibility
         quickNote: quickNote,
         date: entryDate,
         sharedWithCoach: entry.sharedWithCoach ?? false,
@@ -242,12 +318,17 @@ const JournalEntryScreen = ({ route, navigation }: any) => {
         ...(entry.id && { id: entry.id }),
       };
 
+      console.log('Sending entry data to API:', entryData);
+
       if (entry.id) {
         // Update existing entry
-        await updateJournalEntry(entry.id, entryData);
+        console.log('Updating existing entry with ID:', entry.id);
+        await journalService.updateJournalEntry(entry.id, entryData);
       } else {
         // Create new entry
-        await createJournalEntry(entryData);
+        console.log('Creating new entry');
+        const result = await journalService.createJournalEntry(entryData);
+        console.log('Entry created successfully:', result);
       }
 
       // Navigate back to the previous screen

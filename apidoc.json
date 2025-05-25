@@ -1,0 +1,285 @@
+openapi: 3.0.3
+info:
+  title: Mental Health API
+  version: 1.0.0
+  description: OpenAPI 3.0 specification for user management, journals, media uploads, and appointments.
+
+servers:
+  - url: https://api.example.com/v1
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: integer
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Journal:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        specialistId:
+          type: string
+        time:
+          type: string
+          format: date-time
+        status:
+          type: string
+
+paths:
+  /auth/register:
+    post:
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Authenticated
+        '401':
+          description: Unauthorized
+
+  /auth/google:
+    post:
+      summary: Authenticate with Google
+      responses:
+        '200':
+          description: Google login success
+
+  /auth/reset-password:
+    post:
+      summary: Reset password request
+      responses:
+        '200':
+          description: Reset email sent
+
+  /users/me:
+    get:
+      summary: Get current user profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    put:
+      summary: Update current user profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Updated user
+
+    delete:
+      summary: Delete user account
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Deleted
+
+  /journals:
+    get:
+      summary: List journal entries
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of journals
+
+    post:
+      summary: Create journal entry
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Journal created
+
+  /journals/{id}:
+    get:
+      summary: Get a journal entry
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Journal entry
+
+    put:
+      summary: Update a journal entry
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Updated
+
+    delete:
+      summary: Delete journal entry
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Deleted
+
+  /media/upload:
+    post:
+      summary: Upload media file
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Media uploaded
+
+  /appointments:
+    get:
+      summary: List appointments
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of appointments
+
+    post:
+      summary: Create appointment
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Appointment created
+
+  /appointments/{id}:
+    get:
+      summary: Get appointment details
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Appointment
+
+    put:
+      summary: Update appointment
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Updated
+
+    delete:
+      summary: Cancel appointment
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Deleted
+
+  /specialists:
+    get:
+      summary: List specialists
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of specialists
+
+  /specialists/{id}:
+    get:
+      summary: Get specialist details
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Specialist detail
+
+  /specialists/{id}/availability:
+    get:
+      summary: Get specialist availability
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Availability data

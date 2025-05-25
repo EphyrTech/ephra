@@ -11,19 +11,17 @@
       "resizeMode": "contain",
       "backgroundColor": "#4CAF50"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.ephra"
+      "bundleIdentifier": "com.ephyrtech.ephra"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./app/assets/adaptive-icon.png",
         "backgroundColor": "#4CAF50"
       },
-      "package": "com.yourcompany.ephra"
+      "package": "com.ephyrtech.ephra"
     },
     "web": {
       "favicon": "./app/assets/favicon.png"

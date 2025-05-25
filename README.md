@@ -25,15 +25,30 @@ ephra/
 ├── app/                      # Main application code
 │   ├── assets/               # Images, fonts, etc.
 │   ├── components/           # Reusable UI components
-│   ├── screens/              # App screens
-│   ├── navigation/           # Navigation configuration
-│   ├── services/             # API and service integrations
-│   ├── hooks/                # Custom React hooks
+│   │   ├── calendar/         # Calendar components
+│   │   ├── journal/          # Journal components
+│   │   └── StripeProvider.tsx # Stripe payment provider
 │   ├── contexts/             # React context providers
-│   ├── utils/                # Utility functions
-│   └── config/               # App configuration
-├── firebase/                 # Firebase configuration
-└── [Other config files]      # Various configuration files
+│   │   └── AuthContext.tsx   # Authentication context
+│   ├── config/               # App configuration
+│   │   └── env.ts            # Environment configuration
+│   ├── hooks/                # Custom React hooks
+│   │   └── useAuth.ts        # Authentication hook
+│   ├── navigation/           # Navigation configuration
+│   │   └── AppNavigator.tsx  # Main navigation setup
+│   ├── screens/              # App screens
+│   │   ├── appointments/     # Appointment booking screens
+│   │   ├── auth/             # Authentication screens
+│   │   ├── calendar/         # Calendar screens
+│   │   ├── coach/            # Coach-related screens
+│   │   ├── journal/          # Journal screens
+│   │   └── profile/          # User profile screens
+│   └── services/             # API and service integrations
+│       ├── firebase/         # Firebase service functions
+│       ├── googleCalendarService.ts # Google Calendar integration
+│       └── stripeService.ts  # Stripe payment integration
+├── assets/                   # Global assets
+└── [Configuration files]     # Various configuration files
 ```
 
 ## Getting Started
@@ -67,16 +82,20 @@ ephra/
    ```
 
 3. Set up environment variables
-   - Copy `.env.example` to `.env.local`
+
+   - Create a `.env.local` file at the root of the project
    - Fill in your Firebase configuration values
    - Add any other required API keys
 
    ```bash
-   cp .env.example .env.local
+   # Create a .env.local file with the following variables
+   # (see Environment Variables section below for details)
+   touch .env.local
    # Then edit .env.local with your actual values
    ```
 
 4. Configure Firebase
+
    - Create a Firebase project
    - Enable Authentication (Email/Password and Google)
    - Set up Firestore database
@@ -90,7 +109,7 @@ ephra/
    yarn start
    ```
 
-5. Run on a device or emulator
+6. Run on a device or emulator
    - Press `i` for iOS simulator
    - Press `a` for Android emulator
    - Press `w` for web browser
@@ -116,6 +135,7 @@ ephra/
    ```
 
 5. When prompted, click "Reopen in Container" or run the command:
+
    - Press `F1` and select "Remote-Containers: Reopen in Container"
 
 6. VS Code will build the development container (this may take a few minutes the first time)
@@ -137,38 +157,54 @@ ephra/
     - Use Expo Go app on your physical device by scanning the QR code
     - For iOS/Android emulators, additional configuration may be needed
 
-## Environment Variables
+## Environment Configuration
 
-This project uses environment variables to manage sensitive information like API keys. The following variables are required:
+This project uses a comprehensive environment configuration system to manage different deployment environments and service integrations.
 
-### Firebase Configuration
+### Quick Setup
 
-```env
-FIREBASE_API_KEY=your_firebase_api_key
-FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
-FIREBASE_DATABASE_URL=https://your_project_id-default-rtdb.region.firebasedatabase.app
-FIREBASE_PROJECT_ID=your_project_id
-FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
-FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
-FIREBASE_APP_ID=your_app_id
-FIREBASE_MEASUREMENT_ID=your_measurement_id
+```bash
+# Interactive environment setup
+npm run setup:env
+
+# Or choose specific environment
+npm run setup:dev      # Development
+npm run setup:staging  # Staging
+npm run setup:prod     # Production
 ```
 
-### Stripe Configuration
+### Validate Configuration
 
-```env
-STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key
+```bash
+# Check current environment
+npm run env:validate
+
+# Show environment info
+npm run env:show
+
+# Test API connection
+npm run test:api
 ```
 
-### Google API Configuration
+### Key Environment Variables
 
 ```env
-GOOGLE_API_KEY=your_google_api_key
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
+# Environment
+APP_ENV=development                    # development, staging, production
+API_BASE_URL=http://localhost:8000/v1  # Backend API endpoint
+DEBUG=true                             # Enable debug logging
+
+# Feature Flags
+FEATURE_STRIPE_PAYMENTS=true           # Enable payments
+FEATURE_GOOGLE_CALENDAR=true           # Enable calendar
+FEATURE_PUSH_NOTIFICATIONS=true        # Enable notifications
+
+# Third-party Services
+STRIPE_PUBLISHABLE_KEY=pk_test_...     # Stripe payment key
+GOOGLE_API_KEY=your_google_api_key     # Google services
 ```
 
-These variables should be placed in a `.env.local` file at the root of the project. For development, you can copy the `.env.example` file and fill in your values.
+For complete configuration options, see [Environment Configuration Guide](./docs/ENVIRONMENT_CONFIGURATION.md).
 
 ## Color Scheme
 
