@@ -1,4 +1,4 @@
-import "dotenv/config";
+require("dotenv").config();
 
 // Helper function to parse boolean environment variables
 const parseBoolean = (value, defaultValue = false) => {
@@ -14,7 +14,7 @@ const parseNumber = (value, defaultValue = 0) => {
   return isNaN(parsed) ? defaultValue : parsed;
 };
 
-export default {
+module.exports = {
   name: process.env.APP_NAME || "Ephra",
   slug: process.env.APP_SLUG || "ephra",
   owner: "ephyrtech-org",
@@ -90,70 +90,6 @@ export default {
     ALLOWED_FILE_TYPES: process.env.ALLOWED_FILE_TYPES || "image/jpeg,image/png,image/gif,audio/mpeg,audio/wav,application/pdf",
     UPLOAD_DIRECTORY: process.env.UPLOAD_DIRECTORY || "uploads",
 
-    // Cloud Storage
-    CLOUD_STORAGE_PROVIDER: process.env.CLOUD_STORAGE_PROVIDER || "local",
-    AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
-    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
-    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-    AWS_REGION: process.env.AWS_REGION || "us-east-1",
-
-    // =============================================================================
-    // SECURITY SETTINGS
-    // =============================================================================
-    ACCESS_TOKEN_EXPIRE_MINUTES: parseNumber(process.env.ACCESS_TOKEN_EXPIRE_MINUTES, 43200),
-    REFRESH_TOKEN_EXPIRE_DAYS: parseNumber(process.env.REFRESH_TOKEN_EXPIRE_DAYS, 30),
-    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: parseNumber(process.env.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES, 15),
-    RATE_LIMIT_PER_MINUTE: parseNumber(process.env.RATE_LIMIT_PER_MINUTE, 60),
-    RATE_LIMIT_BURST: parseNumber(process.env.RATE_LIMIT_BURST, 100),
-
-    // =============================================================================
-    // EMAIL CONFIGURATION
-    // =============================================================================
-    SMTP_SERVER: process.env.SMTP_SERVER || "smtp.gmail.com",
-    SMTP_PORT: parseNumber(process.env.SMTP_PORT, 587),
-    SMTP_USERNAME: process.env.SMTP_USERNAME,
-    SMTP_PASSWORD: process.env.SMTP_PASSWORD,
-    EMAIL_FROM: process.env.EMAIL_FROM || "noreply@ephra.com",
-    EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME || "Ephra Health",
-
-    // =============================================================================
-    // NOTIFICATION SERVICES
-    // =============================================================================
-    EXPO_PUSH_TOKEN: process.env.EXPO_PUSH_TOKEN,
-    FCM_SERVER_KEY: process.env.FCM_SERVER_KEY,
-    APNS_KEY_ID: process.env.APNS_KEY_ID,
-    APNS_TEAM_ID: process.env.APNS_TEAM_ID,
-
-    // =============================================================================
-    // ANALYTICS & MONITORING
-    // =============================================================================
-    SENTRY_DSN: process.env.SENTRY_DSN,
-    ANALYTICS_TRACKING_ID: process.env.ANALYTICS_TRACKING_ID,
-    LOG_LEVEL: process.env.LOG_LEVEL || "info",
-    ENABLE_PERFORMANCE_MONITORING: parseBoolean(process.env.ENABLE_PERFORMANCE_MONITORING, false),
-    PERFORMANCE_SAMPLE_RATE: parseFloat(process.env.PERFORMANCE_SAMPLE_RATE) || 0.1,
-
-    // =============================================================================
-    // CACHING & PERFORMANCE
-    // =============================================================================
-    REDIS_URL: process.env.REDIS_URL || "redis://localhost:6379",
-    CACHE_TTL_SECONDS: parseNumber(process.env.CACHE_TTL_SECONDS, 300),
-
-    // =============================================================================
-    // DEVELOPMENT TOOLS
-    // =============================================================================
-    EXPO_DEVTOOLS: parseBoolean(process.env.EXPO_DEVTOOLS, true),
-    REACT_NATIVE_DEBUGGER: parseBoolean(process.env.REACT_NATIVE_DEBUGGER, false),
-    FLIPPER_ENABLED: parseBoolean(process.env.FLIPPER_ENABLED, false),
-    FAST_REFRESH: parseBoolean(process.env.FAST_REFRESH, true),
-    LIVE_RELOAD: parseBoolean(process.env.LIVE_RELOAD, false),
-
-    // =============================================================================
-    // MOBILE APP CONFIGURATION
-    // =============================================================================
-    APP_BUILD_NUMBER: parseNumber(process.env.APP_BUILD_NUMBER, 1),
-    UNIVERSAL_LINK_DOMAIN: process.env.UNIVERSAL_LINK_DOMAIN || "ephra.com",
-
     // =============================================================================
     // FEATURE FLAGS
     // =============================================================================
@@ -169,5 +105,8 @@ export default {
     // =============================================================================
     TEST_API_BASE_URL: process.env.TEST_API_BASE_URL || "http://localhost:8001/v1",
     MOCK_EXTERNAL_SERVICES: parseBoolean(process.env.MOCK_EXTERNAL_SERVICES, true),
+    eas: {
+      projectId: "1c99de5e-1fd2-4bbb-91ca-836adf6520c6"
+    }
   },
 };

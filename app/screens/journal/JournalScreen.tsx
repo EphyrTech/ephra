@@ -18,7 +18,6 @@ import {
 } from '../../services/api';
 import JournalEntryCard from '../../components/journal/JournalEntryCard';
 
-// Interface for grouped entries by date
 interface GroupedEntries {
   date: Date;
   entries: JournalEntry[];
@@ -37,17 +36,14 @@ const JournalScreen = ({ navigation }: any) => {
     }
   }, [user]);
 
-  // Refresh entries when screen comes into focus (e.g., after saving an entry)
   useFocusEffect(
     React.useCallback(() => {
       if (user) {
-        console.log('Journal screen focused, refreshing entries...');
         fetchJournalEntries();
       }
     }, [user])
   );
 
-  // Group entries by date
   useEffect(() => {
     if (entries.length > 0) {
       groupEntriesByDate();
@@ -61,12 +57,7 @@ const JournalScreen = ({ navigation }: any) => {
 
     setLoading(true);
     try {
-      console.log('Fetching journal entries for user:', user.id);
       const journalEntries = await journalService.getJournalEntries();
-      console.log('Fetched journal entries:', journalEntries);
-      console.log('Number of entries:', journalEntries.length);
-
-      // Sort by date (newest first)
       const sortedEntries = journalEntries.sort((a, b) => {
         const dateA = new Date(a.date || a.created_at || 0);
         const dateB = new Date(b.date || b.created_at || 0);
@@ -83,10 +74,8 @@ const JournalScreen = ({ navigation }: any) => {
   const groupEntriesByDate = () => {
     const groups: Record<string, JournalEntry[]> = {};
 
-    // Group entries by date string
     entries.forEach(entry => {
       let entryDate: Date;
-
       if (entry.date instanceof Date) {
         entryDate = entry.date;
       } else if (typeof entry.date === 'string') {
@@ -98,23 +87,18 @@ const JournalScreen = ({ navigation }: any) => {
       }
 
       const dateString = entryDate.toDateString();
-
       if (!groups[dateString]) {
         groups[dateString] = [];
       }
-
       groups[dateString].push(entry);
     });
 
-    // Convert to array of GroupedEntries
     const result: GroupedEntries[] = Object.keys(groups).map(dateString => ({
       date: new Date(dateString),
       entries: groups[dateString]
     }));
 
-    // Sort by date (newest first)
     result.sort((a, b) => b.date.getTime() - a.date.getTime());
-
     setGroupedEntries(result);
   };
 
@@ -125,8 +109,6 @@ const JournalScreen = ({ navigation }: any) => {
   };
 
   const handleEntryPress = (entry: JournalEntry) => {
-    console.log('Journal: Opening entry for editing:', entry.id);
-    // Pass entryId to trigger API fetch for latest data
     navigation.navigate('JournalEntry', { entryId: entry.id });
   };
 

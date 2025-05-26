@@ -25,7 +25,6 @@ const DayJournalScreen = ({ route, navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Format the date for display
   const formattedDate = selectedDate ? format(new Date(selectedDate), 'EEEE, MMMM d, yyyy') : 'Today';
 
   useEffect(() => {
@@ -39,28 +38,15 @@ const DayJournalScreen = ({ route, navigation }: any) => {
 
     setLoading(true);
     try {
-      console.log('DayJournal: Fetching entries for date:', selectedDate);
-      console.log('DayJournal: User ID:', user?.id);
-      // Get all journal entries for the user
       const allEntries = await journalService.getJournalEntries();
-      console.log('DayJournal: Total entries fetched:', allEntries.length);
-      console.log('DayJournal: All entries:', allEntries);
-
-      // Filter entries for the selected date
       const selectedDateObj = new Date(selectedDate);
-      console.log('DayJournal: Selected date object:', selectedDateObj);
-      console.log('DayJournal: Selected date string:', selectedDateObj.toDateString());
 
       const entriesForDate = allEntries.filter(entry => {
-        console.log('DayJournal: Checking entry:', entry.id, 'Date field:', entry.date, 'Created at:', entry.created_at);
-
         if (!entry.date && !entry.created_at) {
-          console.log('DayJournal: Entry has no date field, skipping');
           return false;
         }
 
         let entryDate: Date;
-
         if (entry.date instanceof Date) {
           entryDate = entry.date;
         } else if (typeof entry.date === 'string') {
@@ -68,29 +54,16 @@ const DayJournalScreen = ({ route, navigation }: any) => {
         } else if (entry.created_at) {
           entryDate = new Date(entry.created_at);
         } else {
-          console.log('DayJournal: Could not parse date for entry:', entry.id);
           return false;
         }
 
-        console.log('DayJournal: Entry date object:', entryDate);
-        console.log('DayJournal: Entry date string:', entryDate.toDateString());
-
-        const isSame = isSameDay(entryDate, selectedDateObj);
-        console.log('DayJournal: Date comparison result:', isSame);
-
-        if (isSame) {
-          console.log('DayJournal: ✅ Found matching entry:', entry.id, entryDate);
-        }
-        return isSame;
+        return isSameDay(entryDate, selectedDateObj);
       });
 
-      console.log('DayJournal: Entries for selected date:', entriesForDate.length);
-
-      // Sort entries by created_at timestamp (newest first)
       const sortedEntries = [...entriesForDate].sort((a, b) => {
         const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
         const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
-        return timeB - timeA; // Descending order (newest first)
+        return timeB - timeA;
       });
 
       setEntries(sortedEntries);
@@ -109,9 +82,6 @@ const DayJournalScreen = ({ route, navigation }: any) => {
   };
 
   const handleEntryPress = (entry: JournalEntry) => {
-    console.log('DayJournal: Opening entry for editing:', entry.id);
-    console.log('DayJournal: Entry data:', entry);
-    // Pass entryId to trigger API fetch for latest data
     navigation.navigate('JournalEntry', { entryId: entry.id });
   };
 
