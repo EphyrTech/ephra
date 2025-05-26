@@ -267,7 +267,13 @@ const CalendarScreen = ({ navigation }: any) => {
   const handleEventPress = (event: CalendarEvent) => {
     if (event.type === 'appointment') {
       // Navigate to appointment details
-      // navigation.navigate('AppointmentDetails', { appointment: event.data });
+      const appointment = event.data as Appointment;
+      if (appointment.id) {
+        navigation.navigate('Coach', {
+          screen: 'AppointmentView',
+          params: { appointmentId: appointment.id }
+        });
+      }
     } else {
       // Navigate to journal entry
       navigation.navigate('Journal', {

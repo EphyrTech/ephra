@@ -56,6 +56,12 @@ const CoachScreen = ({ navigation }: any) => {
     navigation.navigate('CreateAppointment');
   };
 
+  const handleAppointmentPress = (appointment: Appointment) => {
+    if (appointment.id) {
+      navigation.navigate('AppointmentView', { appointmentId: appointment.id });
+    }
+  };
+
   const renderUserContent = () => (
     <>
       <View style={styles.bannerContainer}>
@@ -76,6 +82,43 @@ const CoachScreen = ({ navigation }: any) => {
           <Ionicons name="people" size={80} color="#4CAF50" />
         </View>
       </View>
+
+      {/* User Appointments Section */}
+      <Text style={styles.sectionTitle}>Your Appointments</Text>
+
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4CAF50" />
+        </View>
+      ) : appointments.length > 0 ? (
+        appointments.slice(0, 5).map((appointment, index) => (
+          <TouchableOpacity
+            key={appointment.id || index}
+            style={styles.appointmentCard}
+            onPress={() => handleAppointmentPress(appointment)}
+          >
+            <View style={styles.appointmentInfo}>
+              <Text style={styles.appointmentTime}>
+                {new Date(appointment.start_time || '').toLocaleDateString()} at{' '}
+                {new Date(appointment.start_time || '').toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+              </Text>
+              <Text style={styles.appointmentUser}>
+                Care Provider: {appointment.care_provider_name || `Provider ${appointment.care_provider_id}`}
+              </Text>
+              <Text style={styles.appointmentStatus}>Status: {appointment.status}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#999" />
+          </TouchableOpacity>
+        ))
+      ) : (
+        <View style={styles.emptyAppointments}>
+          <Ionicons name="calendar-outline" size={64} color="#ccc" />
+          <Text style={styles.emptyText}>No upcoming appointments</Text>
+          <Text style={styles.emptySubtext}>
+            Schedule your first appointment to get started
+          </Text>
+        </View>
+      )}
 
       <Text style={styles.sectionTitle}>Our Services</Text>
 
@@ -119,7 +162,7 @@ const CoachScreen = ({ navigation }: any) => {
         <View style={styles.bannerContent}>
           <Text style={styles.bannerTitle}>Care Provider Dashboard</Text>
           <Text style={styles.bannerText}>
-            Manage your appointments and create new sessions for your assigned patients.
+            Manage your appointments and create new sessions for your assigned users.
           </Text>
           <TouchableOpacity
             style={styles.scheduleButton}
@@ -142,26 +185,30 @@ const CoachScreen = ({ navigation }: any) => {
         </View>
       ) : appointments.length > 0 ? (
         appointments.slice(0, 5).map((appointment, index) => (
-          <View key={appointment.id || index} style={styles.appointmentCard}>
+          <TouchableOpacity
+            key={appointment.id || index}
+            style={styles.appointmentCard}
+            onPress={() => handleAppointmentPress(appointment)}
+          >
             <View style={styles.appointmentInfo}>
               <Text style={styles.appointmentTime}>
                 {new Date(appointment.start_time || '').toLocaleDateString()} at{' '}
                 {new Date(appointment.start_time || '').toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
               </Text>
               <Text style={styles.appointmentUser}>
-                Patient: {appointment.user_name || `User ${appointment.user_id}`}
+                User: {appointment.user_name || `User ${appointment.user_id}`}
               </Text>
               <Text style={styles.appointmentStatus}>Status: {appointment.status}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#999" />
-          </View>
+          </TouchableOpacity>
         ))
       ) : (
         <View style={styles.emptyAppointments}>
           <Ionicons name="calendar-outline" size={64} color="#ccc" />
           <Text style={styles.emptyText}>No upcoming appointments</Text>
           <Text style={styles.emptySubtext}>
-            Create appointments for your patients to get started
+            Create appointments for your users to get started
           </Text>
         </View>
       )}

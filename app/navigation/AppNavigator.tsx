@@ -20,6 +20,7 @@ import SpecialistTypeScreen from "../screens/appointments/SpecialistTypeScreen";
 import SpecialistListScreen from "../screens/appointments/SpecialistListScreen";
 import SpecialistAvailabilityScreen from "../screens/appointments/SpecialistAvailabilityScreen";
 import AppointmentDetailsScreen from "../screens/appointments/AppointmentDetailsScreen";
+import AppointmentViewScreen from "../screens/appointments/AppointmentViewScreen";
 import PaymentLinkScreen from "../screens/appointments/PaymentLinkScreen";
 import AppointmentConfirmationScreen from "../screens/appointments/AppointmentConfirmationScreen";
 import CreateAppointmentScreen from "../screens/appointments/CreateAppointmentScreen";
@@ -116,6 +117,11 @@ const CoachNavigator = () => (
     <Stack.Screen
       name="AppointmentDetails"
       component={AppointmentDetailsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="AppointmentView"
+      component={AppointmentViewScreen}
       options={{ headerShown: false }}
     />
     <Stack.Screen

@@ -37,6 +37,7 @@ logs
 .env.development
 .env.test
 .env.production
+.env.staging
 
 # typescript
 *.tsbuildinfo
@@ -89,5 +90,12 @@ local.properties
 
 # Testing
 coverage/
+
+# Infrastructure secrets and rendered templates
+**/rendered-templates.yaml
+**/secrets/*.yaml
+!**/secrets/*.yaml.template
+**/values-*.yaml
+!**/values.yaml
 
 

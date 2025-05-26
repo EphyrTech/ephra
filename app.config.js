@@ -44,6 +44,16 @@ module.exports = {
     bundler: "metro",
   },
   scheme: process.env.URL_SCHEME || "ephra",
+  plugins: [
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/notification-icon.png",
+        color: "#4CAF50"
+      }
+    ],
+    "expo-web-browser"
+  ],
   extra: {
     // =============================================================================
     // ENVIRONMENT SETTINGS
