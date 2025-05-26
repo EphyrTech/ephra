@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  ephra-debug:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+    container_name: ephra-debug-build
+    volumes:
+      # Mount source code for live debugging
+      - .:/app
+      - /app/node_modules
+      # Mount cache directories to persist between runs
+      - expo-cache:/root/.expo
+      - npm-cache:/root/.npm
+    environment:
+      - NODE_ENV=development
+      - NODE_OPTIONS=--max-old-space-size=8192 --trace-warnings --trace-deprecation
+      - DEBUG=*
+      - EXPO_DEBUG=true
+      - WEBPACK_ANALYZE=false
+      - EXPO_DEVTOOLS=true
+    ports:
+      - "19006:19006"  # Expo web dev server
+      - "19001:19001"  # Expo dev tools
+    command: >
+      /bin/bash -c "
+      echo '=== Docker Debug Environment Started ===';
+      echo 'Container Memory Limit:' && cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null || echo 'N/A';
+      echo 'Available Memory:' && free -h;
+      echo 'Node Version:' && node --version;
+      echo 'NPM Version:' && npm --version;
+      echo '';
+      echo '=== Cleaning up previous builds ===';
+      rm -rf dist/ web-build/ .expo/;
+      echo '';
+      echo '=== Installing dependencies ===';
+      npm install --verbose;
+      echo '';
+      echo '=== Starting debug build ===';
+      npx expo export:web --dev --verbose;
+      echo '';
+      echo '=== Build completed, keeping container alive ===';
+      tail -f /dev/null;
+      "
+    stdin_open: true
+    tty: true
+
+  # Alternative service for interactive debugging
+  ephra-interactive:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+    container_name: ephra-interactive-debug
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - expo-cache:/root/.expo
+      - npm-cache:/root/.npm
+    environment:
+      - NODE_ENV=development
+      - NODE_OPTIONS=--max-old-space-size=8192
+    ports:
+      - "19007:19006"
+      - "19002:19001"
+    command: /bin/bash
+    stdin_open: true
+    tty: true
+
+volumes:
+  expo-cache:
+  npm-cache:

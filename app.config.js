@@ -41,7 +41,7 @@ module.exports = {
   },
   web: {
     favicon: "./assets/favicon.png",
-    bundler: "webpack",
+    bundler: "metro",
   },
   scheme: process.env.URL_SCHEME || "ephra",
   extra: {

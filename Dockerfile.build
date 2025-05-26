@@ -4,24 +4,52 @@ FROM node:18-alpine
 # Set working directory
 WORKDIR /app
 
-# Install dependencies for native modules
-RUN apk add --no-cache python3 make g++
+# Install dependencies for native modules and debugging tools
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    git \
+    bash \
+    curl \
+    htop \
+    procps
 
-# Copy package files
+# Copy package files first for better caching
 COPY package*.json ./
 COPY yarn.lock ./
 
-# Install dependencies
-RUN npm install
+# Clear npm cache and install dependencies with verbose logging
+RUN npm cache clean --force && \
+    npm install --verbose --no-audit --no-fund
 
 # Copy source code
 COPY . .
 
-# Set environment variables for build
-ENV NODE_ENV=production
-ENV NODE_OPTIONS="--max-old-space-size=4096"
+# Set environment variables for debugging build
+ENV NODE_ENV=development
+ENV NODE_OPTIONS="--max-old-space-size=8192 --trace-warnings --trace-deprecation"
+ENV DEBUG=*
+ENV EXPO_DEBUG=true
+ENV WEBPACK_ANALYZE=false
 
-# Build the web app
-RUN npx expo export:web
+# Create debug script
+RUN echo '#!/bin/bash\n\
+echo "=== System Information ==="\n\
+node --version\n\
+npm --version\n\
+echo "Memory: $(free -h)"\n\
+echo "Disk: $(df -h)"\n\
+echo ""\n\
+echo "=== Environment Variables ==="\n\
+env | grep -E "(NODE|EXPO|WEBPACK)" | sort\n\
+echo ""\n\
+echo "=== Package Versions ==="\n\
+npm list --depth=0 | head -20\n\
+echo ""\n\
+echo "=== Starting Build with Debug ==="\n\
+npx expo export:web --dev --verbose\n\
+' > /app/debug-build.sh && chmod +x /app/debug-build.sh
 
-# The built files will be in /app/dist
+# Default command runs the debug script
+CMD ["/app/debug-build.sh"]
