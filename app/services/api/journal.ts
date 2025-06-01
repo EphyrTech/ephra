@@ -25,8 +25,8 @@ export interface JournalEntry {
 
 const journalService = {
   getJournalEntries: async (): Promise<JournalEntry[]> => {
-    console.log('JournalService: Calling GET /journals');
-    const result = await apiClient.get('/journals');
+    console.log('JournalService: Calling GET /journals/');
+    const result = await apiClient.get('/journals/');
     console.log('JournalService: Raw API response:', result);
     console.log('JournalService: Response type:', typeof result);
     console.log('JournalService: Is array:', Array.isArray(result));
@@ -49,7 +49,7 @@ const journalService = {
       ...entry,
       date: entry.date instanceof Date ? entry.date.toISOString() : entry.date
     };
-    return await apiClient.post('/journals', entryData);
+    return await apiClient.post('/journals/', entryData);
   },
 
   updateJournalEntry: async (id: string, entry: Partial<JournalEntry>): Promise<JournalEntry> => {
