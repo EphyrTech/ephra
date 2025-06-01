@@ -16,6 +16,7 @@ import { format, addMinutes } from 'date-fns';
 import { useAuth } from '../../hooks/useAuth';
 import { appointmentService } from '../../services/api';
 import { addAppointmentToCalendar } from '../../services/googleCalendarService';
+import { handleApiError } from '../../utils/errorUtils';
 
 const DURATION_OPTIONS = [
   { value: 30, label: '30 minutes' },
@@ -111,9 +112,10 @@ const AppointmentDetailsScreen = ({ route, navigation }: AppointmentDetailsScree
           }
         ]
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating appointment:', error);
-      Alert.alert('Error', 'Failed to create appointment. Please try again.');
+      const errorMessage = handleApiError(error, 'APPOINTMENT');
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }

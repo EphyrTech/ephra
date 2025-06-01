@@ -1,4 +1,36 @@
-require("dotenv").config();
+// Load environment-specific configuration
+const path = require('path');
+const dotenv = require('dotenv');
+
+// Force production environment for web deployments
+const isWebDeployment = process.env.EAS_BUILD_PLATFORM === 'web' ||
+                       process.env.EXPO_PUBLIC_ENV === 'production' ||
+                       typeof window !== 'undefined';
+
+const environment = isWebDeployment ? 'production' : (process.env.NODE_ENV || process.env.APP_ENV || 'development');
+const envFile = `.env.${environment}`;
+
+console.log(`🔧 Environment detection: ${environment}`);
+console.log(`🔧 Is web deployment: ${isWebDeployment}`);
+console.log(`🔧 EAS_BUILD_PLATFORM: ${process.env.EAS_BUILD_PLATFORM}`);
+
+// Always try to load .env first (our fallback), then environment-specific
+const fallbackPath = path.resolve(__dirname, '.env');
+const envPath = path.resolve(__dirname, envFile);
+
+try {
+  dotenv.config({ path: fallbackPath });
+  console.log(`✅ Loaded base config from: .env`);
+} catch (error) {
+  console.log(`⚠️ Could not load .env file`);
+}
+
+try {
+  dotenv.config({ path: envPath, override: false });
+  console.log(`✅ Loaded environment config from: ${envFile}`);
+} catch (error) {
+  console.log(`⚠️ Could not load ${envFile}, using .env only`);
+}
 
 // Helper function to parse boolean environment variables
 const parseBoolean = (value, defaultValue = false) => {
@@ -13,6 +45,10 @@ const parseNumber = (value, defaultValue = 0) => {
   const parsed = parseInt(value, 10);
   return isNaN(parsed) ? defaultValue : parsed;
 };
+
+// Debug environment variables
+console.log(`🔧 API_BASE_URL from env: ${process.env.API_BASE_URL}`);
+console.log(`🔧 BACKEND_URL from env: ${process.env.BACKEND_URL}`);
 
 module.exports = {
   name: process.env.APP_NAME || "Ephra",
@@ -44,6 +80,12 @@ module.exports = {
     bundler: "metro",
   },
   scheme: process.env.URL_SCHEME || "ephra",
+  updates: {
+    url: "https://u.expo.dev/1c99de5e-1fd2-4bbb-91ca-836adf6520c6"
+  },
+  runtimeVersion: {
+    policy: "appVersion"
+  },
   plugins: [
     [
       "expo-notifications",
@@ -65,8 +107,8 @@ module.exports = {
     // =============================================================================
     // API CONFIGURATION
     // =============================================================================
-    API_BASE_URL: process.env.API_BASE_URL || "http://localhost:8000/v1",
-    API_BASE_URL_WEB: process.env.API_BASE_URL_WEB || "http://localhost:8000/v1",
+    API_BASE_URL: process.env.API_BASE_URL || "default/v1",
+    API_BASE_URL_WEB: process.env.API_BASE_URL_WEB || "default/v1",
     API_TIMEOUT: parseNumber(process.env.API_TIMEOUT, 30000),
     API_RETRY_ATTEMPTS: parseNumber(process.env.API_RETRY_ATTEMPTS, 3),
     API_KEY: process.env.API_KEY,
@@ -75,9 +117,9 @@ module.exports = {
     // =============================================================================
     // BACKEND SERVICE URLS
     // =============================================================================
-    BACKEND_URL: process.env.BACKEND_URL || "http://localhost:8000",
-    FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:3000",
-    WEBSOCKET_URL: process.env.WEBSOCKET_URL || "ws://localhost:8000/ws",
+    BACKEND_URL: process.env.BACKEND_URL || "default",
+    FRONTEND_URL: process.env.FRONTEND_URL || "default",
+    WEBSOCKET_URL: process.env.WEBSOCKET_URL || "wss://default/ws",
 
     // =============================================================================
     // THIRD-PARTY SERVICES
@@ -115,8 +157,12 @@ module.exports = {
     // =============================================================================
     TEST_API_BASE_URL: process.env.TEST_API_BASE_URL || "http://localhost:8001/v1",
     MOCK_EXTERNAL_SERVICES: parseBoolean(process.env.MOCK_EXTERNAL_SERVICES, true),
+
+    // =============================================================================
+    // EAS CONFIGURATION
+    // =============================================================================
     eas: {
       projectId: "1c99de5e-1fd2-4bbb-91ca-836adf6520c6"
-    }
+    },
   },
 };

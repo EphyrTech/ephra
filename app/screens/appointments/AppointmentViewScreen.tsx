@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { useAuth } from '../../hooks/useAuth';
 import { appointmentService, Appointment } from '../../services/api';
 import { isCareProvider } from '../../utils/roleUtils';
+import { handleApiError } from '../../utils/errorUtils';
 
 interface AppointmentViewScreenProps {
   route: {
@@ -83,9 +84,10 @@ const AppointmentViewScreen = ({ route, navigation }: AppointmentViewScreenProps
       await appointmentService.cancelAppointment(appointment.id);
       Alert.alert('Success', 'Appointment cancelled successfully');
       handleBackPress();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error cancelling appointment:', error);
-      Alert.alert('Error', 'Failed to cancel appointment');
+      const errorMessage = handleApiError(error, 'APPOINTMENT');
+      Alert.alert('Error', errorMessage);
     }
   };
 

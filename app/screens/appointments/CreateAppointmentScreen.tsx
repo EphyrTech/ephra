@@ -16,6 +16,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuth } from '../../hooks/useAuth';
 import { appointmentService, AssignedUser, AppointmentCreate } from '../../services/api';
 import { isCareProvider, validateUserRole, debugUserRole } from '../../utils/roleUtils';
+import { handleApiError } from '../../utils/errorUtils';
 
 const CreateAppointmentScreen = ({ navigation }: any) => {
   const { user } = useAuth();
@@ -72,9 +73,10 @@ const CreateAppointmentScreen = ({ navigation }: any) => {
       setLoading(true);
       const users = await appointmentService.getAssignedUsers();
       setAssignedUsers(users);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading assigned users:', error);
-      Alert.alert('Error', 'Failed to load assigned users');
+      const errorMessage = handleApiError(error, 'USER');
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -190,9 +192,10 @@ const CreateAppointmentScreen = ({ navigation }: any) => {
           }
         ]
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating appointment:', error);
-      Alert.alert('Error', 'Failed to create appointment. Please try again.');
+      const errorMessage = handleApiError(error, 'APPOINTMENT');
+      Alert.alert('Error', errorMessage);
     } finally {
       setCreating(false);
     }
