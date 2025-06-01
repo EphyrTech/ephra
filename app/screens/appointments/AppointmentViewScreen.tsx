@@ -81,9 +81,15 @@ const AppointmentViewScreen = ({ route, navigation }: AppointmentViewScreenProps
     if (!appointment?.id) return;
 
     try {
-      await appointmentService.cancelAppointment(appointment.id);
-      Alert.alert('Success', 'Appointment cancelled successfully');
-      handleBackPress();
+      const cancelledAppointment = await appointmentService.cancelAppointment(appointment.id);
+      // Update the local appointment state to reflect the cancellation
+      setAppointment(cancelledAppointment);
+      Alert.alert('Success', 'Appointment cancelled successfully. This time slot is now available for booking again.', [
+        {
+          text: 'OK',
+          onPress: () => handleBackPress()
+        }
+      ]);
     } catch (error: any) {
       console.error('Error cancelling appointment:', error);
       const errorMessage = handleApiError(error, 'APPOINTMENT');

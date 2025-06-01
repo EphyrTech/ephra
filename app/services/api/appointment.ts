@@ -83,7 +83,7 @@ const appointmentService = {
   },
 
   cancelAppointment: async (id: string): Promise<Appointment> => {
-    // Update appointment status to cancelled
+    // Update appointment status to cancelled (keeps the record and frees up the time slot)
     return await apiClient.put(`/appointments/${id}`, { status: 'cancelled' });
   },
 
