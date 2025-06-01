@@ -78,10 +78,19 @@ const AppointmentViewScreen = ({ route, navigation }: AppointmentViewScreenProps
   };
 
   const confirmCancelAppointment = async () => {
-    if (!appointment?.id) return;
+    if (!appointment?.id) {
+      console.error('Cannot cancel appointment: No appointment ID found');
+      Alert.alert('Error', 'Cannot cancel appointment: No appointment ID found');
+      return;
+    }
+
+    console.log('Attempting to cancel appointment:', appointment.id);
+    console.log('Current appointment status:', appointment.status);
 
     try {
       const cancelledAppointment = await appointmentService.cancelAppointment(appointment.id);
+      console.log('Appointment cancelled successfully:', cancelledAppointment);
+
       // Update the local appointment state to reflect the cancellation
       setAppointment(cancelledAppointment);
       Alert.alert('Success', 'Appointment cancelled successfully. This time slot is now available for booking again.', [
@@ -92,8 +101,15 @@ const AppointmentViewScreen = ({ route, navigation }: AppointmentViewScreenProps
       ]);
     } catch (error: any) {
       console.error('Error cancelling appointment:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        data: error.data,
+        response: error.response
+      });
+
       const errorMessage = handleApiError(error, 'APPOINTMENT');
-      Alert.alert('Error', errorMessage);
+      Alert.alert('Error', `Failed to cancel appointment: ${errorMessage}`);
     }
   };
 
@@ -166,15 +182,31 @@ const AppointmentViewScreen = ({ route, navigation }: AppointmentViewScreenProps
   };
 
   const canCancelAppointment = () => {
-    if (!appointment) return false;
-    if (appointment.status === 'cancelled' || appointment.status === 'completed') return false;
+    if (!appointment) {
+      console.log('Cannot cancel: No appointment data');
+      return false;
+    }
+
+    if (appointment.status === 'cancelled' || appointment.status === 'completed') {
+      console.log('Cannot cancel: Appointment status is', appointment.status);
+      return false;
+    }
 
     // Allow cancellation up to 1 hour before the appointment
     const appointmentTime = new Date(appointment.start_time || '');
     const now = new Date();
     const oneHourBefore = new Date(appointmentTime.getTime() - 60 * 60 * 1000);
 
-    return now < oneHourBefore;
+    const canCancel = now < oneHourBefore;
+    console.log('Cancel appointment check:', {
+      appointmentTime: appointmentTime.toISOString(),
+      now: now.toISOString(),
+      oneHourBefore: oneHourBefore.toISOString(),
+      canCancel,
+      status: appointment.status
+    });
+
+    return canCancel;
   };
 
   if (loading) {

@@ -18,6 +18,7 @@ import {
   JournalEntry,
   journalService
 } from '../../services/api';
+import { getAppointmentCreationTarget, isCareProvider } from '../../utils/roleUtils';
 
 type CalendarEvent = {
   id: string;
@@ -158,10 +159,18 @@ const CalendarScreen = ({ navigation }: any) => {
       }
 
       if (isSameDay(startDate, date)) {
+        // Create a more descriptive title with user/care provider name and status
+        let appointmentTitle = 'Appointment';
+        if (appointment.user_name) {
+          appointmentTitle = `with ${appointment.user_name}`;
+        } else if (appointment.care_provider_name) {
+          appointmentTitle = `with ${appointment.care_provider_name}`;
+        }
+
         eventsForDay.push({
           id: appointment.id || '',
           type: 'appointment',
-          title: `Appointment`, // Generic title since API might not have title field
+          title: appointmentTitle,
           time: format(startDate, 'h:mm a'),
           data: appointment
         });
@@ -229,15 +238,7 @@ const CalendarScreen = ({ navigation }: any) => {
   const handleDayPress = (date: Date) => {
     setSelectedDate(date);
 
-    // Navigate to the day journal screen to show all entries for this day
-    navigation.navigate('Journal', {
-      screen: 'DayJournal',
-      params: {
-        date: date    // Pass the selected date
-      }
-    });
-
-    // Update the events list for the selected date (in the background)
+    // Update the events list for the selected date
     if (user) {
       // Use Promise.allSettled to handle both promises regardless of success/failure
       Promise.allSettled([
@@ -261,6 +262,41 @@ const CalendarScreen = ({ navigation }: any) => {
       .catch(error => {
         console.error('Error updating events:', error);
       });
+    }
+  };
+
+  const handleOpenJournal = () => {
+    // Navigate to the day journal screen to show all entries for the selected day
+    navigation.navigate('Journal', {
+      screen: 'DayJournal',
+      params: {
+        date: selectedDate    // Pass the selected date
+      }
+    });
+  };
+
+  const handleCreateAppointment = () => {
+    // Use role-based navigation to determine the correct appointment creation flow
+    const target = getAppointmentCreationTarget(user);
+    console.log('handleCreateAppointment - Navigating to:', target);
+
+    navigation.navigate('Coach', {
+      screen: target
+    });
+  };
+
+  const getStatusColor = (status?: string) => {
+    switch (status) {
+      case 'confirmed':
+        return '#4CAF50';
+      case 'pending':
+        return '#FF9800';
+      case 'cancelled':
+        return '#F44336';
+      case 'completed':
+        return '#2196F3';
+      default:
+        return '#999';
     }
   };
 
@@ -303,6 +339,20 @@ const CalendarScreen = ({ navigation }: any) => {
           {item.type === 'appointment' ? item.title : `Mood: ${item.title}`}
         </Text>
         {item.time && <Text style={styles.eventTime}>{item.time}</Text>}
+        {item.type === 'appointment' && (
+          <View style={styles.appointmentDetails}>
+            {(item.data as Appointment).status && (
+              <Text style={[styles.appointmentStatus, { color: getStatusColor((item.data as Appointment).status) }]}>
+                Status: {((item.data as Appointment).status || '').charAt(0).toUpperCase() + ((item.data as Appointment).status || '').slice(1)}
+              </Text>
+            )}
+            {(item.data as Appointment).notes && (
+              <Text style={styles.eventDescription} numberOfLines={2}>
+                {(item.data as Appointment).notes}
+              </Text>
+            )}
+          </View>
+        )}
         {item.type === 'journal' && (
           <Text style={styles.eventDescription} numberOfLines={2}>
             {(item.data as JournalEntry).notes}
@@ -332,9 +382,29 @@ const CalendarScreen = ({ navigation }: any) => {
       />
 
       <View style={styles.eventsContainer}>
-        <Text style={styles.dateHeader}>
-          {format(selectedDate, 'EEEE, MMMM d, yyyy')}
-        </Text>
+        <View style={styles.dateHeaderContainer}>
+          <Text style={styles.dateHeader}>
+            {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+          </Text>
+          <View style={styles.buttonsContainer}>
+            {isCareProvider(user) && (
+              <TouchableOpacity
+                style={styles.createAppointmentButton}
+                onPress={handleCreateAppointment}
+              >
+                <Ionicons name="calendar-outline" size={18} color="#fff" />
+                <Text style={styles.createAppointmentButtonText}>Create Appointment</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.openJournalButton}
+              onPress={handleOpenJournal}
+            >
+              <Ionicons name="journal" size={18} color="#fff" />
+              <Text style={styles.openJournalButtonText}>Open Journal</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {loading ? (
           <ActivityIndicator size="large" color="#4CAF50" style={styles.loader} />
@@ -384,11 +454,60 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
+  dateHeaderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
   dateHeader: {
     fontSize: 18,
     fontWeight: '600',
-    marginBottom: 15,
     color: '#333',
+    flex: 1,
+  },
+  buttonsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  createAppointmentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  createAppointmentButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  openJournalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3F51B5',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  openJournalButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
   },
   eventsList: {
     paddingBottom: 20,
@@ -434,6 +553,14 @@ const styles = StyleSheet.create({
   eventDescription: {
     fontSize: 14,
     color: '#666',
+  },
+  appointmentDetails: {
+    marginTop: 4,
+  },
+  appointmentStatus: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 2,
   },
   noEventsContainer: {
     flex: 1,

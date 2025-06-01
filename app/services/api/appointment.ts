@@ -39,7 +39,7 @@ export interface AssignedUser {
 
 const appointmentService = {
   getAppointments: async (): Promise<Appointment[]> => {
-    return await apiClient.get('/appointments');
+    return await apiClient.get('/appointments/');
   },
 
   getAppointment: async (id: string): Promise<Appointment> => {
